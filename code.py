@@ -2,6 +2,10 @@
 #
 # SPDX-License-Identifier: GPLv3
 import array
+import audiobusio
+import audiomixer
+import audiomp3
+import board
 import displayio
 import fontio
 import json
@@ -16,11 +20,13 @@ from adafruit_display_text.text_box import TextBox
 from adafruit_fruitjam.peripherals import request_display_config
 import adafruit_imageload
 import adafruit_pathlib as pathlib
+import adafruit_tlv320
 import adafruit_usb_host_descriptors
 from font_knewave_outline_webfont_18 import FONT as FONT_TITLE
 
 TEXT_SPEED = 0.1
 BOB_SPEED = 0.2
+WINDOW_REVEAL_DURATION = 1.0
 
 # setup display
 request_display_config(320, 240)
@@ -41,6 +47,53 @@ launcher_config = {}
 if pathlib.Path("launcher.conf.json").exists():
     with open("launcher.conf.json", "r") as f:
         launcher_config = json.load(f)
+
+# Check if DAC is connected
+i2c = board.I2C()
+while not i2c.try_lock():
+    time.sleep(0.01)
+tlv320_present = 0x18 in i2c.scan()
+i2c.unlock()
+
+if tlv320_present:
+    # setup audio
+    dac = adafruit_tlv320.TLV320DAC3100(i2c)
+
+    # load wave files
+    sound_ambience = audiomp3.MP3Decoder("sounds/ambience.mp3")
+    sound_piano = audiomp3.MP3Decoder("sounds/piano.mp3")
+    
+    # set sample rate & bit depth
+    dac.configure_clocks(
+        sample_rate=sound_ambience.sample_rate,
+        bit_depth=sound_ambience.bits_per_sample,
+    )
+
+    if "sound" in launcher_config and launcher_config["sound"] == "speaker":
+        dac.speaker_output = True
+        dac.speaker_volume = -40
+    else:
+        # use headphones
+        dac.headphone_output = True
+        dac.headphone_volume = -15  # dB
+
+    # setup audio output
+    audio_config = {
+        "buffer_size": 4096,
+        "channel_count": sound_ambience.channel_count,
+        "sample_rate": sound_ambience.sample_rate,
+        "bits_per_sample": sound_ambience.bits_per_sample,
+        "samples_signed": sound_ambience.bits_per_sample >= 16,
+    }
+    audio = audiobusio.I2SOut(board.I2S_BCLK, board.I2S_WS, board.I2S_DIN)
+    mixer = audiomixer.Mixer(voice_count=2, **audio_config)
+    mixer.voice[0].level = .4
+    mixer.voice[1].level = .1
+    audio.play(mixer)
+
+    # play wave files
+    mixer.play(sound_ambience, voice=0, loop=True)
+    mixer.play(sound_piano, voice=1, loop=True)
 
 # load the mouse cursor bitmap
 cursor_bmp, cursor_palette = adafruit_imageload.load("bitmaps/cursor.bmp")
@@ -227,7 +280,7 @@ class Animator:
         self._accumulator = 0.0
 
 text_window_animation = Animator(
-    target=text_window, duration=2.0,
+    target=text_window, duration=WINDOW_REVEAL_DURATION,
     start=(text_window.x, display.height),
     end=(text_window.x, (display.height - text_window.height) - 16),
 )
