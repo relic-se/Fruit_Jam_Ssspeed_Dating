@@ -1,0 +1,6 @@
+adafruit_display_text
+adafruit_fruitjam
+adafruit_imageload
+adafruit_pathlib
+adafruit_usb_host_descriptors
+font_knewave_outline_webfont_18
