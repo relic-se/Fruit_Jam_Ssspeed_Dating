@@ -24,9 +24,7 @@ import adafruit_tlv320
 import adafruit_usb_host_descriptors
 from font_knewave_outline_webfont_18 import FONT as FONT_TITLE
 
-TEXT_SPEED = 0.1
-BOB_SPEED = 0.2
-WINDOW_REVEAL_DURATION = 1.0
+TARGET_FRAME_RATE = 30
 
 # setup display
 request_display_config(320, 240)
@@ -34,13 +32,17 @@ display = supervisor.runtime.display
 display.auto_refresh = False
 
 # create root group
-main_group = displayio.Group()
-display.root_group = main_group
+root_group = displayio.Group()
+display.root_group = root_group
 display.refresh()  # blank out screen
 
 # create group for game elements
-scene_group = displayio.Group()
-main_group.append(scene_group)
+main_group = displayio.Group()
+root_group.append(main_group)
+
+# create group for overlay elements
+overlay_group = displayio.Group()
+root_group.append(overlay_group)
 
 # read config
 launcher_config = {}
@@ -141,21 +143,21 @@ if "use_mouse" in launcher_config and launcher_config["use_mouse"]:
 # add background image
 bg_bmp, bg_palette = adafruit_imageload.load("bitmaps/bg.bmp")
 bg_tg = displayio.TileGrid(bg_bmp, pixel_shader=bg_palette)
-scene_group.append(bg_tg)
+main_group.append(bg_tg)
 
 # add blinka
 snake_bmp, snake_palette = adafruit_imageload.load("bitmaps/snake.bmp")
 snake_palette.make_transparent(4)
 snake_tg = displayio.TileGrid(snake_bmp, pixel_shader=snake_palette,
                               x=124, y=25)
-scene_group.append(snake_tg)
+main_group.append(snake_tg)
 
 # add table image
 table_bmp, table_palette = adafruit_imageload.load("bitmaps/table.bmp")
 table_palette.make_transparent(3)
 table_tg = displayio.TileGrid(table_bmp, pixel_shader=table_palette,
                               y=display.height-table_bmp.height)  # move to bottom of display
-scene_group.append(table_tg)
+main_group.append(table_tg)
 
 # load window image
 window_bmp, window_palette = adafruit_imageload.load("bitmaps/window.bmp")
@@ -200,15 +202,11 @@ class TextWindow(displayio.Group):
             bb_width, bb_height = font.get_bounding_box()
             bb_x_offset, bb_y_offset = 0, 0
         self._tb = TextBox(
-            font=font,
+            font=font, text=text,
             width=self.width-14, height=self.height,
             x=7, y=5+((bb_height+bb_y_offset)//2),
         )
         self.append(self._tb)
-
-        self._text = text
-        self._text_index = 0
-        self._text_delta = 0.0
 
     @property
     def width(self) -> int:
@@ -224,22 +222,7 @@ class TextWindow(displayio.Group):
     
     @text.setter
     def text(self, value:str) -> None:
-        self._tb.text = ""
-        self._text = value
-        self._text_index = 0
-        self._text_delta = 0.0
-
-    def update(self, delta:float) -> None:
-        if self._text_index < len(self._text):
-            self._text_delta += delta
-            while self._text_delta >= TEXT_SPEED and self._text_index < len(self._text):
-                while self._text_index < len(self._text):
-                    ch = self._text[self._text_index]
-                    self._tb.text += ch
-                    self._text_index += 1
-                    if ch not in (" ", "\n", "\t"):
-                        break
-                self._text_delta -= TEXT_SPEED
+        self._tb.text = value
 
 text_window = TextWindow(
     width=256, height=56,
@@ -247,47 +230,34 @@ text_window = TextWindow(
 )
 text_window.x = (display.width - text_window.width) // 2
 text_window.y = (display.height - text_window.height) - 16
-scene_group.append(text_window)
+main_group.append(text_window)
 
 class Animator:
-    def __init__(self, target:displayio.Group, end:tuple, duration:float, start:tuple=None):
+    def __init__(self, target:displayio.Group, end:tuple, start:tuple, duration:float=1.0):
         self._target = target
         self._end = end
-        self._duration = duration
-        self._accumulator = 0.0
-
-        if start is not None:
-            self._assign(start)
-        self._start = (self._target.x, self._target.y)
-
-    def _assign(self, value:tuple) -> None:
-        self._target.x, self._target.y = value
+        self._start = start
+        self._duration = int(TARGET_FRAME_RATE * duration)
+        self._frames = 0
+        self._velocity = tuple([int((end[i] - start[i]) / self._duration) for i in range(2)])
 
     @property
     def animating(self) -> bool:
-        return self._accumulator < self._duration
+        return self._frames <= self._duration
 
-    def update(self, delta:float) -> None:
-        self._accumulator += delta
+    def update(self) -> None:
         if self.animating:
-            pos = min(self._accumulator / self._duration, 1.0)
-            self._assign((
-                int((self._end[0] - self._start[0]) * pos + self._start[0]),
-                int((self._end[1] - self._start[1]) * pos + self._start[1]),
-            ))
+            self._target.x = self._frames * self._velocity[0] + self._start[0]
+            self._target.y = self._frames * self._velocity[1] + self._start[1]
+            self._frames += 1
 
     def reverse(self) -> None:
         self._start, self._end = self._end, self._start
+        self._velocity = tuple([self._velocity[i] * -1 for i in range(2)])
         self.reset()
 
     def reset(self) -> None:
-        self._accumulator = 0.0
-
-text_window_animation = Animator(
-    target=text_window, duration=WINDOW_REVEAL_DURATION,
-    start=(text_window.x, display.height),
-    end=(text_window.x, (display.height - text_window.height) - 16),
-)
+        self._frames = 0
 
 # initial display refresh
 display.refresh()
@@ -310,8 +280,7 @@ while True:
 
         # enter
         elif key == "\n":
-            if not text_window_animation.animating:
-                text_window_animation.reverse()
+            pass
 
     # handle mouse input
     if mouse:
@@ -324,18 +293,6 @@ while True:
             cursor_tg.y = min(max(cursor_tg.y + mouse_buf[2], 0), display.height - 1)
             if mouse_buf[0] & 0x01 != 0:  # left click
                 play_sfx(sfx_click)
-    
-    # update time delta
-    previous_timestamp = current_timestamp
-    current_timestamp = time.monotonic()
-    delta = current_timestamp - previous_timestamp
-
-    # snake bob animation (mostly just for testing)
-    #snake_tg.y = int(math.sin(current_timestamp * math.pi * BOB_SPEED) * 5 + 25)
-
-    # write out window text and animate window reveal
-    text_window.update(delta)
-    text_window_animation.update(delta)
 
     # update display if any changes were made
-    display.refresh()
+    display.refresh(target_frames_per_second=TARGET_FRAME_RATE)
