@@ -10,7 +10,6 @@ import displayio
 import fontio
 import json
 import math
-import synthio
 import sys
 import supervisor
 from terminalio import FONT
@@ -60,8 +59,9 @@ if tlv320_present:
     # setup audio
     dac = adafruit_tlv320.TLV320DAC3100(i2c)
 
-    # load wave file
+    # load wave files
     music = audiocore.WaveFile("sounds/music.wav")
+    sfx_click = audiocore.WaveFile("sounds/click.wav")
 
     # set sample rate & bit depth
     dac.configure_clocks(
@@ -79,7 +79,7 @@ if tlv320_present:
 
     # setup audio output
     audio_config = {
-        "buffer_size": 16384,
+        "buffer_size": 1024,
         "channel_count": music.channel_count,
         "sample_rate": music.sample_rate,
         "bits_per_sample": music.bits_per_sample,
@@ -91,6 +91,13 @@ if tlv320_present:
 
     # play wave file
     mixer.play(music, voice=0, loop=True)
+
+else:
+    sfx_click = None
+
+def play_sfx(wave:audiocore.WaveFile) -> None:
+    if tlv320_present:
+        mixer.play(wave, voice=1, loop=False)
 
 # load the mouse cursor bitmap
 cursor_bmp, cursor_palette = adafruit_imageload.load("bitmaps/cursor.bmp")
@@ -316,8 +323,7 @@ while True:
             cursor_tg.x = min(max(cursor_tg.x + mouse_buf[1], 0), display.width - 1)
             cursor_tg.y = min(max(cursor_tg.y + mouse_buf[2], 0), display.height - 1)
             if mouse_buf[0] & 0x01 != 0:  # left click
-                if not text_window_animation.animating:
-                    text_window_animation.reverse()
+                play_sfx(sfx_click)
     
     # update time delta
     previous_timestamp = current_timestamp
