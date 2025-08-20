@@ -3,13 +3,14 @@
 # SPDX-License-Identifier: GPLv3
 import array
 import audiobusio
+import audiocore
 import audiomixer
-import audiomp3
 import board
 import displayio
 import fontio
 import json
 import math
+import synthio
 import sys
 import supervisor
 from terminalio import FONT
@@ -59,14 +60,13 @@ if tlv320_present:
     # setup audio
     dac = adafruit_tlv320.TLV320DAC3100(i2c)
 
-    # load wave files
-    sound_ambience = audiomp3.MP3Decoder("sounds/ambience.mp3")
-    sound_piano = audiomp3.MP3Decoder("sounds/piano.mp3")
-    
+    # load wave file
+    music = audiocore.WaveFile("sounds/music.wav")
+
     # set sample rate & bit depth
     dac.configure_clocks(
-        sample_rate=sound_ambience.sample_rate,
-        bit_depth=sound_ambience.bits_per_sample,
+        sample_rate=music.sample_rate,
+        bit_depth=music.bits_per_sample,
     )
 
     if "sound" in launcher_config and launcher_config["sound"] == "speaker":
@@ -79,21 +79,18 @@ if tlv320_present:
 
     # setup audio output
     audio_config = {
-        "buffer_size": 4096,
-        "channel_count": sound_ambience.channel_count,
-        "sample_rate": sound_ambience.sample_rate,
-        "bits_per_sample": sound_ambience.bits_per_sample,
-        "samples_signed": sound_ambience.bits_per_sample >= 16,
+        "buffer_size": 16384,
+        "channel_count": music.channel_count,
+        "sample_rate": music.sample_rate,
+        "bits_per_sample": music.bits_per_sample,
+        "samples_signed": music.bits_per_sample >= 16,
     }
     audio = audiobusio.I2SOut(board.I2S_BCLK, board.I2S_WS, board.I2S_DIN)
     mixer = audiomixer.Mixer(voice_count=2, **audio_config)
-    mixer.voice[0].level = .4
-    mixer.voice[1].level = .1
     audio.play(mixer)
 
-    # play wave files
-    mixer.play(sound_ambience, voice=0, loop=True)
-    mixer.play(sound_piano, voice=1, loop=True)
+    # play wave file
+    mixer.play(music, voice=0, loop=True)
 
 # load the mouse cursor bitmap
 cursor_bmp, cursor_palette = adafruit_imageload.load("bitmaps/cursor.bmp")
