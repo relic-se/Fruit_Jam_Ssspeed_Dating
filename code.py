@@ -16,6 +16,7 @@ from terminalio import FONT
 import time
 import usb.core
 
+from adafruit_display_text.label import Label
 from adafruit_display_text.text_box import TextBox
 from adafruit_fruitjam.peripherals import request_display_config
 import adafruit_imageload
@@ -38,11 +39,42 @@ display.refresh()  # blank out screen
 
 # create group for game elements
 main_group = displayio.Group()
+main_group.hidden = True
 root_group.append(main_group)
 
 # create group for overlay elements
 overlay_group = displayio.Group()
 root_group.append(overlay_group)
+
+# create list which will hold all game objects
+class Entities(list):
+    def __init__(self):
+        super().__init__()
+    def update(self) -> None:
+        for x in self:
+            x.update()
+entities = Entities()
+
+class Entity(displayio.Group):
+    def __init__(self, on_complete:callable=None, **kwargs):
+        global entities
+        super().__init__(**kwargs)
+        if self not in entities:
+            entities.append(self)
+        self._on_complete = on_complete
+    def update(self) -> None:
+        pass
+    def complete(self) -> None:
+        global entities
+        if self in entities:
+            entities.remove(self)
+        if self._on_complete is not None and callable(self._on_complete):
+            self._on_complete()
+        del self
+    @property
+    def active(self) -> bool:
+        global entities
+        return self in entities
 
 # read config
 launcher_config = {}
@@ -138,7 +170,7 @@ if "use_mouse" in launcher_config and launcher_config["use_mouse"]:
         mouse_buf = array.array("b", [0] * 8)
 
         # show cursor
-        main_group.append(cursor_tg)
+        root_group.append(cursor_tg)
 
 # add background image
 bg_bmp, bg_palette = adafruit_imageload.load("bitmaps/bg.bmp")
@@ -149,7 +181,7 @@ main_group.append(bg_tg)
 snake_bmp, snake_palette = adafruit_imageload.load("bitmaps/snake.bmp")
 snake_palette.make_transparent(4)
 snake_tg = displayio.TileGrid(snake_bmp, pixel_shader=snake_palette,
-                              x=124, y=25)
+                              x=display.width, y=25)
 main_group.append(snake_tg)
 
 # add table image
@@ -230,34 +262,117 @@ text_window = TextWindow(
 )
 text_window.x = (display.width - text_window.width) // 2
 text_window.y = (display.height - text_window.height) - 16
+text_window.hidden = True
 main_group.append(text_window)
 
-class Animator:
-    def __init__(self, target:displayio.Group, end:tuple, start:tuple, duration:float=1.0):
+# title text
+title_label = Label(FONT_TITLE, text="Ssspeed Dating", color=0xffffff,)
+title_label.anchor_point = (.5, .5)
+title_label.anchored_position = (display.width//2, display.height//2)
+overlay_group.append(title_label)
+
+# load the mouse cursor bitmap
+fade_bmp, fade_palette = adafruit_imageload.load("bitmaps/fade.bmp")
+fade_palette.make_transparent(1)
+FADE_TILE_SIZE = fade_bmp.height
+FADE_TILES = fade_bmp.width // FADE_TILE_SIZE
+
+class Fade(Entity):
+    def __init__(self, duration:float=1, reverse:bool=False, **kwargs):
+        global fade_bmp, fade_palette, overlay_group
+        super().__init__(**kwargs)
+        self._speed = TARGET_FRAME_RATE // duration
+        self._reverse = reverse
+        self._index = 0
+        self._counter = 0
+        self._tg = displayio.TileGrid(
+            bitmap=fade_bmp, pixel_shader=fade_palette,
+            width=display.width//FADE_TILE_SIZE, height=display.height//FADE_TILE_SIZE,
+            tile_width=FADE_TILE_SIZE, tile_height=FADE_TILE_SIZE,
+            default_tile=0 if not reverse else FADE_TILES-1,
+        )
+        self.append(self._tg)
+        overlay_group.append(self)
+
+    def update(self) -> None:
+        super().update()
+        if self.active:
+            self._counter += 1
+            if self._counter > self._speed:
+                self._index += 1
+                if self._index < FADE_TILES:
+                    self._update_tile()
+                else:
+                    self.complete()
+
+    def _update_tile(self) -> None:
+        index = self._index if not self._reverse else FADE_TILES-self._index-1
+        for x in range(self._tg.width):
+            for y in range(self._tg.height):
+                self._tg[x, y] = index
+
+    def __del__(self) -> None:
+        global overlay_group
+        self.remove(self._tg)
+        del self._tg
+        overlay_group.remove(self)
+        super().__del__()
+
+class Animator(Entity):
+    def __init__(self, target:displayio.Group, end:tuple, start:tuple=None, duration:float=1, **kwargs):
+        super().__init__(**kwargs)
         self._target = target
+        if start is not None:
+            self._start = start
+            self._target.x, self._target.y = self._start[0], self._start[1]
+        else:
+            self._start = (self._target.x, self._target.y)
         self._end = end
-        self._start = start
         self._duration = int(TARGET_FRAME_RATE * duration)
         self._frames = 0
-        self._velocity = tuple([int((end[i] - start[i]) / self._duration) for i in range(2)])
+        self._velocity = tuple([int((self._end[i] - self._start[i]) / self._duration) for i in range(2)])
 
     @property
     def animating(self) -> bool:
         return self._frames <= self._duration
 
     def update(self) -> None:
-        if self.animating:
-            self._target.x = self._frames * self._velocity[0] + self._start[0]
-            self._target.y = self._frames * self._velocity[1] + self._start[1]
-            self._frames += 1
+        super().update()
+        if self.active:
+            if self.animating:
+                self._target.x = (self._frames * self._velocity[0]) + self._start[0]
+                self._target.y = (self._frames * self._velocity[1]) + self._start[1]
+                self._frames += 1
+            else:
+                self._target.x, self._target.y = self._end
+                self.complete()
 
-    def reverse(self) -> None:
-        self._start, self._end = self._end, self._start
-        self._velocity = tuple([self._velocity[i] * -1 for i in range(2)])
-        self.reset()
+started = False
+def start() -> None:
+    # Hide title -> fade in -> slide snake in -> show text
+    global started
+    if not started:
+        started = True
+        title_label.hidden = True
+        main_group.hidden = False
+        Fade(on_complete=lambda: Animator(
+            target=snake_tg,
+            end=(124, snake_tg.y),
+            on_complete=lambda: setattr(text_window, "hidden", False),
+        ))
 
-    def reset(self) -> None:
-        self._frames = 0
+finished = False
+def finish() -> None:
+    # hide text -> slide snake out -> fade out
+    global finished
+    if not finished:
+        finished = True
+        text_window.hidden = True
+        Animator(
+            target=snake_tg,
+            end=(display.width, snake_tg.y),
+            on_complete=lambda: Fade(reverse=True),
+        )
 
 # initial display refresh
 display.refresh()
@@ -280,7 +395,10 @@ while True:
 
         # enter
         elif key == "\n":
-            pass
+            if not started:
+                start()
+            else:
+                finish()
 
     # handle mouse input
     if mouse:
@@ -293,6 +411,13 @@ while True:
             cursor_tg.y = min(max(cursor_tg.y + mouse_buf[2], 0), display.height - 1)
             if mouse_buf[0] & 0x01 != 0:  # left click
                 play_sfx(sfx_click)
+                if not started:
+                    start()
+                else:
+                    finish()
+
+    # update all game entities
+    entities.update()
 
     # update display if any changes were made
     display.refresh(target_frames_per_second=TARGET_FRAME_RATE)
