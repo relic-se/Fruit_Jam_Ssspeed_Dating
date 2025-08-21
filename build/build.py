@@ -95,7 +95,7 @@ def main():
     temp_root_dir.mkdir(parents=True)
 
     # copy and format bundle readme
-    shutil.copyfile("README.txt", temp_root_dir / "README.txt")
+    shutil.copyfile(build_dir / "README.txt", temp_root_dir / "README.txt")
     replace_tags(temp_root_dir / "README.txt", {
         "name": git_name,
         "guide_url": metadata["guide_url"],
