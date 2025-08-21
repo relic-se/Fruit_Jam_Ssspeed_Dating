@@ -123,7 +123,7 @@ def main():
                 shutil.copyfile(root_dir / src_file, bundle_dir / src_file, follow_symlinks=False)
 
             # install required libs
-            shutil.copyfile("boot_out.txt", bundle_dir / "boot_out.txt")
+            shutil.copyfile(build_dir / "boot_out.txt", bundle_dir / "boot_out.txt")
             replace_tags(bundle_dir / "boot_out.txt", {
                 "version": bundle_version.replace('.x', '.0.0'),
                 "date": datetime.today().strftime('%Y-%m-%d'),
