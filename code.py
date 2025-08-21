@@ -1,195 +1,41 @@
 # SPDX-FileCopyrightText: 2025 Cooper Dalrymple (@relic-se)
 #
 # SPDX-License-Identifier: GPLv3
-import array
-import audiobusio
-import audiocore
-import audiomixer
-import board
 import displayio
 import fontio
-import json
 import math
 import sys
 import supervisor
 from terminalio import FONT
-import time
-import usb.core
 
 from adafruit_display_text.label import Label
 from adafruit_display_text.text_box import TextBox
-from adafruit_fruitjam.peripherals import request_display_config
 import adafruit_imageload
-import adafruit_pathlib as pathlib
-import adafruit_tlv320
-import adafruit_usb_host_descriptors
 from font_knewave_outline_webfont_18 import FONT as FONT_TITLE
 
-TARGET_FRAME_RATE = 30
-
-# setup display
-request_display_config(320, 240)
-display = supervisor.runtime.display
-display.auto_refresh = False
-
-# create root group
-root_group = displayio.Group()
-display.root_group = root_group
-display.refresh()  # blank out screen
-
-# create group for game elements
-main_group = displayio.Group()
-main_group.hidden = True
-root_group.append(main_group)
-
-# create group for overlay elements
-overlay_group = displayio.Group()
-root_group.append(overlay_group)
-
-# create list which will hold all game objects
-class Entities(list):
-    def __init__(self):
-        super().__init__()
-    def update(self) -> None:
-        for x in self:
-            x.update()
-entities = Entities()
-
-class Entity(displayio.Group):
-    def __init__(self, on_complete:callable=None, **kwargs):
-        global entities
-        super().__init__(**kwargs)
-        if self not in entities:
-            entities.append(self)
-        self._on_complete = on_complete
-    def update(self) -> None:
-        pass
-    def complete(self) -> None:
-        global entities
-        if self in entities:
-            entities.remove(self)
-        if self._on_complete is not None and callable(self._on_complete):
-            self._on_complete()
-        del self
-    @property
-    def active(self) -> bool:
-        global entities
-        return self in entities
-
-# read config
-launcher_config = {}
-if pathlib.Path("launcher.conf.json").exists():
-    with open("launcher.conf.json", "r") as f:
-        launcher_config = json.load(f)
-
-# Check if DAC is connected
-i2c = board.I2C()
-while not i2c.try_lock():
-    time.sleep(0.01)
-tlv320_present = 0x18 in i2c.scan()
-i2c.unlock()
-
-if tlv320_present:
-    # setup audio
-    dac = adafruit_tlv320.TLV320DAC3100(i2c)
-
-    # load wave files
-    music = audiocore.WaveFile("sounds/music.wav")
-    sfx_click = audiocore.WaveFile("sounds/click.wav")
-
-    # set sample rate & bit depth
-    dac.configure_clocks(
-        sample_rate=music.sample_rate,
-        bit_depth=music.bits_per_sample,
-    )
-
-    if "sound" in launcher_config and launcher_config["sound"] == "speaker":
-        dac.speaker_output = True
-        dac.speaker_volume = -40
-    else:
-        # use headphones
-        dac.headphone_output = True
-        dac.headphone_volume = -15  # dB
-
-    # setup audio output
-    audio_config = {
-        "buffer_size": 1024,
-        "channel_count": music.channel_count,
-        "sample_rate": music.sample_rate,
-        "bits_per_sample": music.bits_per_sample,
-        "samples_signed": music.bits_per_sample >= 16,
-    }
-    audio = audiobusio.I2SOut(board.I2S_BCLK, board.I2S_WS, board.I2S_DIN)
-    mixer = audiomixer.Mixer(voice_count=2, **audio_config)
-    audio.play(mixer)
-
-    # play wave file
-    mixer.play(music, voice=0, loop=True)
-
-else:
-    sfx_click = None
-
-def play_sfx(wave:audiocore.WaveFile) -> None:
-    if tlv320_present:
-        mixer.play(wave, voice=1, loop=False)
-
-# load the mouse cursor bitmap
-cursor_bmp, cursor_palette = adafruit_imageload.load("bitmaps/cursor.bmp")
-cursor_palette.make_transparent(0)
-
-# create a TileGrid for the mouse, using its bitmap and pixel_shader
-cursor_tg = displayio.TileGrid(
-    bitmap=cursor_bmp, pixel_shader=cursor_palette,
-    x=display.width//2, y=display.height//2,
-)
-
-mouse_interface_index, mouse_endpoint_address = None, None
-mouse = None
-mouse_was_attached = None
-
-if "use_mouse" in launcher_config and launcher_config["use_mouse"]:
-
-    # scan for connected USB device and loop over any found
-    for device in usb.core.find(find_all=True):
-        config_descriptor = adafruit_usb_host_descriptors.get_configuration_descriptor(device, 0)
-
-        _possible_interface_index, _possible_endpoint_address = adafruit_usb_host_descriptors.find_boot_mouse_endpoint(device)
-        if _possible_interface_index is not None and _possible_endpoint_address is not None:
-            mouse = device
-            mouse_interface_index = _possible_interface_index
-            mouse_endpoint_address = _possible_endpoint_address
-
-    mouse_was_attached = None
-    if mouse is not None:
-        # detach the kernel driver if needed
-        if (mouse_was_attached := mouse.is_kernel_driver_active(0)):
-            mouse.detach_kernel_driver(0)
-
-        # set configuration on the mouse so we can use it
-        mouse.set_configuration()
-        mouse_buf = array.array("b", [0] * 8)
-
-        # show cursor
-        root_group.append(cursor_tg)
+import engine
+import hardware
+import sound
+import graphics
 
 # add background image
 bg_bmp, bg_palette = adafruit_imageload.load("bitmaps/bg.bmp")
 bg_tg = displayio.TileGrid(bg_bmp, pixel_shader=bg_palette)
-main_group.append(bg_tg)
+graphics.main_group.append(bg_tg)
 
 # add blinka
 snake_bmp, snake_palette = adafruit_imageload.load("bitmaps/snake.bmp")
 snake_palette.make_transparent(4)
 snake_tg = displayio.TileGrid(snake_bmp, pixel_shader=snake_palette,
-                              x=display.width, y=25)
-main_group.append(snake_tg)
+                              x=graphics.display.width, y=25)
+graphics.main_group.append(snake_tg)
 
 # add table image
 table_bmp, table_palette = adafruit_imageload.load("bitmaps/table.bmp")
 table_palette.make_transparent(3)
 table_tg = displayio.TileGrid(table_bmp, pixel_shader=table_palette,
-                              y=display.height-table_bmp.height)  # move to bottom of display
-main_group.append(table_tg)
+                              y=graphics.display.height-table_bmp.height)  # move to bottom of display
+graphics.main_group.append(table_tg)
 
 # load window image
 window_bmp, window_palette = adafruit_imageload.load("bitmaps/window.bmp")
@@ -260,92 +106,16 @@ text_window = TextWindow(
     width=256, height=56,
     text="Hello, World! My name is Blinka, and I'm a snake. What would you like to ask me about?",
 )
-text_window.x = (display.width - text_window.width) // 2
-text_window.y = (display.height - text_window.height) - 16
+text_window.x = (graphics.display.width - text_window.width) // 2
+text_window.y = (graphics.display.height - text_window.height) - 16
 text_window.hidden = True
-main_group.append(text_window)
+graphics.main_group.append(text_window)
 
 # title text
 title_label = Label(FONT_TITLE, text="Ssspeed Dating", color=0xffffff,)
 title_label.anchor_point = (.5, .5)
-title_label.anchored_position = (display.width//2, display.height//2)
-overlay_group.append(title_label)
-
-# load the mouse cursor bitmap
-fade_bmp, fade_palette = adafruit_imageload.load("bitmaps/fade.bmp")
-fade_palette.make_transparent(1)
-FADE_TILE_SIZE = fade_bmp.height
-FADE_TILES = fade_bmp.width // FADE_TILE_SIZE
-
-class Fade(Entity):
-    def __init__(self, duration:float=1, reverse:bool=False, **kwargs):
-        global fade_bmp, fade_palette, overlay_group
-        super().__init__(**kwargs)
-        self._speed = TARGET_FRAME_RATE // duration
-        self._reverse = reverse
-        self._index = 0
-        self._counter = 0
-        self._tg = displayio.TileGrid(
-            bitmap=fade_bmp, pixel_shader=fade_palette,
-            width=display.width//FADE_TILE_SIZE, height=display.height//FADE_TILE_SIZE,
-            tile_width=FADE_TILE_SIZE, tile_height=FADE_TILE_SIZE,
-            default_tile=0 if not reverse else FADE_TILES-1,
-        )
-        self.append(self._tg)
-        overlay_group.append(self)
-
-    def update(self) -> None:
-        super().update()
-        if self.active:
-            self._counter += 1
-            if self._counter > self._speed:
-                self._index += 1
-                if self._index < FADE_TILES:
-                    self._update_tile()
-                else:
-                    self.complete()
-
-    def _update_tile(self) -> None:
-        index = self._index if not self._reverse else FADE_TILES-self._index-1
-        for x in range(self._tg.width):
-            for y in range(self._tg.height):
-                self._tg[x, y] = index
-
-    def __del__(self) -> None:
-        global overlay_group
-        self.remove(self._tg)
-        del self._tg
-        overlay_group.remove(self)
-        super().__del__()
-
-class Animator(Entity):
-    def __init__(self, target:displayio.Group, end:tuple, start:tuple=None, duration:float=1, **kwargs):
-        super().__init__(**kwargs)
-        self._target = target
-        if start is not None:
-            self._start = start
-            self._target.x, self._target.y = self._start[0], self._start[1]
-        else:
-            self._start = (self._target.x, self._target.y)
-        self._end = end
-        self._duration = int(TARGET_FRAME_RATE * duration)
-        self._frames = 0
-        self._velocity = tuple([int((self._end[i] - self._start[i]) / self._duration) for i in range(2)])
-
-    @property
-    def animating(self) -> bool:
-        return self._frames <= self._duration
-
-    def update(self) -> None:
-        super().update()
-        if self.active:
-            if self.animating:
-                self._target.x = (self._frames * self._velocity[0]) + self._start[0]
-                self._target.y = (self._frames * self._velocity[1]) + self._start[1]
-                self._frames += 1
-            else:
-                self._target.x, self._target.y = self._end
-                self.complete()
+title_label.anchored_position = (graphics.display.width//2, graphics.display.height//2)
+graphics.overlay_group.append(title_label)
 
 started = False
 def start() -> None:
@@ -354,8 +124,8 @@ def start() -> None:
     if not started:
         started = True
         title_label.hidden = True
-        main_group.hidden = False
-        Fade(on_complete=lambda: Animator(
+        graphics.main_group.hidden = False
+        engine.Fade(on_complete=lambda: engine.Animator(
             target=snake_tg,
             end=(124, snake_tg.y),
             on_complete=lambda: setattr(text_window, "hidden", False),
@@ -368,17 +138,15 @@ def finish() -> None:
     if not finished:
         finished = True
         text_window.hidden = True
-        Animator(
+        engine.Animator(
             target=snake_tg,
-            end=(display.width, snake_tg.y),
-            on_complete=lambda: Fade(reverse=True),
+            end=(graphics.display.width, snake_tg.y),
+            on_complete=lambda: engine.Fade(reverse=True),
         )
 
 # initial display refresh
-display.refresh()
+graphics.refresh()
 
-current_timestamp = time.monotonic()
-previous_timestamp = 0
 while True:
 
     # handle keyboard input
@@ -401,23 +169,16 @@ while True:
                 finish()
 
     # handle mouse input
-    if mouse:
-        try:
-            count = mouse.read(mouse_endpoint_address, mouse_buf, timeout=20)
-        except usb.core.USBTimeoutError:
-            count = 0
-        if count > 0:
-            cursor_tg.x = min(max(cursor_tg.x + mouse_buf[1], 0), display.width - 1)
-            cursor_tg.y = min(max(cursor_tg.y + mouse_buf[2], 0), display.height - 1)
-            if mouse_buf[0] & 0x01 != 0:  # left click
-                play_sfx(sfx_click)
-                if not started:
-                    start()
-                else:
-                    finish()
+    if (mouse := hardware.read_mouse()) is not None:
+        mouse_x, mouse_y, mouse_click = mouse
+        graphics.cursor_tg.x = min(max(graphics.cursor_tg.x + mouse_x, 0), graphics.display.width - 1)
+        graphics.cursor_tg.y = min(max(graphics.cursor_tg.y + mouse_y, 0), graphics.display.height - 1)
+        if mouse_click:
+            sound.play_sfx(sound.SFX_CLICK)
+            if not started:
+                start()
+            else:
+                finish()
 
-    # update all game entities
-    entities.update()
-
-    # update display if any changes were made
-    display.refresh(target_frames_per_second=TARGET_FRAME_RATE)
+    engine.update()
+    graphics.refresh()
