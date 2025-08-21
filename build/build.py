@@ -63,13 +63,13 @@ def main():
     except subprocess.CalledProcessError:
         git_commit = "NO_COMMIT"
 
-    # read metadata
-    with open("metadata.json", "r") as f:
-        metadata = json.load(f)
-
     # get the project root directory
     build_dir = Path(__file__).parent
     root_dir = build_dir.parent
+
+    # read metadata
+    with open(build_dir / "metadata.json", "r") as f:
+        metadata = json.load(f)
 
     # set up paths
     output_dir = root_dir / "dist"
@@ -98,7 +98,7 @@ def main():
     shutil.copyfile(build_dir / "README.txt", temp_root_dir / "README.txt")
     replace_tags(temp_root_dir / "README.txt", {
         "name": git_name,
-        "guide_url": metadata["guide_url"],
+        "guide_url": metadata.get("guide_url", ""),
         "git_remote": git_remote,
         "git_commit": git_commit,
     })
