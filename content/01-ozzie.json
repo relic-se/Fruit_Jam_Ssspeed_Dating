@@ -1,0 +1,135 @@
+{
+    "name": "Ozzie",
+    "bitmap": "bitmaps/ozzie.bmp",
+    "dialogue": [
+        "Hi, I'm Ozzie. Sssorry if I seem awkward, I don't normally do things like thisss and wanted to challenge myssself.",
+        "What bringsss you here tonight?",
+        [
+            {
+                "message": "I love meeting new sssnakesss. It can be a wonderful challenge. I go to thessse thingsss all the time.",
+                "score": 10,
+                "response": [
+                    "I admire your sssocial gumption and posssitivity.",
+                    "Have you ever found a date at anyone one of thessse thingsss?"
+                ]
+            },
+            {
+                "message": "You're not here to find true love? I'm trying again.",
+                "score": 2,
+                "response": [
+                    "I don't really beleive in true love or sssoulmatesss.",
+                    "Have you found a date at one of thessse thingsss?"
+                ]
+            },
+            {
+                "message": "Well, obviousssly I'm here to find a date. If thisss time goesss well.",
+                "score": -5,
+                "response": [
+                    "That makesss sssenssse.",
+                    "Ssso have you ever even found a date at one of thessse thingsss?"
+                ]
+            }
+        ],
+        [
+            {
+                "message": "I have gone on a few datesss and even found some clossse friendsss.",
+                "score": 10,
+                "response": [
+                    "Oh wow, That'sss awesssome!",
+                    "I would love to atleassst make a new friend tonight.",
+                    "What do you normally do on any evening out with your friends?"
+                ]
+            },
+            {
+                "message": [
+                    "Yeah, I really thought I found the one, but we broke up lassst month.",
+                    "Now I'm ssstuck with a whole box of their favorite Gassshapon."
+                ],
+                "score": 2,
+                "response": [
+                    "That sssucksss.. I'm sssorry.",
+                    "Sssometimesss taking a break with friendsss can help.",
+                    "What would be sssomething you and your friendsss would do on a night out?"
+                ]
+            },
+            {
+                "message": "Everytime, but it alwaysss ssseemsss like its going good, then it'sss not.",
+                "score": -5,
+                "response": [
+                    "Dang, that'sss tough.",
+                    "Maybe hanging with sssome friendsss for a break would help.",
+                    "What do you usssually do on an evening out with friendsss?"
+                ]
+            }
+        ],
+        [
+            {
+                "message": [
+                    "I tend to go where the wind takesss me.",
+                    "But I guesss I cannot passs up a good ressstaurant or park.",
+                    "There isss alwaysss sssomething going on in this town to visit."
+                ],
+                "score": 10,
+                "response": [
+                    "_Ozzie smiles excitedly and nods in friendly agreement.",
+                    "_You ask him what he likes to do in his free time."
+                ]
+            },
+            {
+                "message": "My friends come over a lot to hang. I have a rad gamer room.",
+                "score": 2,
+                "response": [
+                    "_Ozzie eyes widen in amazement.",
+                    "_He clears his throat, and you ask him what he and his friends like to do instead?"
+                ]
+            },
+            {
+                "message": [
+                    "I'm alwaysss with thossse losssersss.",
+                    "We hit the clubsss or cassinoesss when we can."
+                ],
+                "score": -5,
+                "response": "_Ozzie looks at you blankly. You ask \"What about you?\""
+            }
+        ],
+        "Life can get in the way sometimesss, but I have a couple close friends.",
+        "When we can get together, we have dinner nightsss at my apartment, go to the beach, or go to ssshows on the weekend.",
+        "It dependsss and I'm pretty open to whatever...",
+        [
+            {
+                "message": [
+                    "That sssoundsss ssso nice. I totally get that.",
+                    "If you are ever cooking gnocchi, let me know, I have the perfect tool for it."
+                ],
+                "score": 10,
+                "response": [
+                    "[buzzer] Okay Sssnakesss! Move to Sssnake Number two.",
+                    "Yum! I would love to invite you next time.",
+                    "_Ozzie says as they excitedly look back over their shoulder as they move to the next table."
+                ]
+            },
+            {
+                "message": [
+                    "I’m ssso jealousss. My friendsss don’t normally go to the beach.",
+                    "They never leave my apartment it feelsss like... hahah."
+                ],
+                "score": 2,
+                "response": [
+                    "[buzzer] Okay Sssnakesss! Move to Sssnake Number two.",
+                    "_Ozzie offers you a sad smile and says...",
+                    "Nice meeting you!",
+                    "_before moving to the next table..."
+                ]
+            },
+            {
+                "message": "Pretty basssic.",
+                "score": -5,
+                "response": [
+                    "[buzzer] Okay Sssnakesss! Move to Sssnake Number two.",
+                    "_Ozzie looks relieved at the sound of the buzzer.",
+                    "They slither off to the next table."
+                ]
+            }
+        ]
+    ]
+}
