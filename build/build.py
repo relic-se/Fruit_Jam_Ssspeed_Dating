@@ -22,8 +22,13 @@ ASSET_DIRS = (
 
 SRC_FILES = (
     "code.py",
+    "config.py",
+    "engine.py",
+    "graphics.py",
+    "hardware.py",
     "icon.bmp",
-    "metadata.json"
+    "metadata.json",
+    "sound.py"
 )
 
 def run(cmd):
