@@ -34,11 +34,11 @@ if tlv320_present:
 
     if "sound" in config.launcher and config.launcher["sound"] == "speaker":
         dac.speaker_output = True
-        dac.speaker_volume = -40
+        dac.dac_volume = config.launcher["tlv320"].get("volume", 5)  # dB
     else:
         # use headphones
         dac.headphone_output = True
-        dac.headphone_volume = -15  # dB
+        dac.dac_volume = config.launcher["tlv320"].get("volume", 0) if "tlv320" in config.launcher else 0  # dB
 
     # setup audio output
     audio_config = {
