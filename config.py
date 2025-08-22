@@ -12,6 +12,6 @@ BIT_DEPTH         = 8
 
 # read config
 launcher = {}
-if pathlib.Path("launcher.conf.json").exists():
-    with open("launcher.conf.json", "r") as f:
+if pathlib.Path("/launcher.conf.json").exists():
+    with open("/launcher.conf.json", "r") as f:
         launcher = json.load(f)
