@@ -1,18 +1,14 @@
 # SPDX-FileCopyrightText: 2025 Cooper Dalrymple (@relic-se)
 #
 # SPDX-License-Identifier: GPLv3
-import array
 import audiobusio
 import audiomixer
 import board
 import time
-import usb.core
 
 import adafruit_tlv320
-import adafruit_usb_host_descriptors
 
 import config
-import graphics
 
 # Check if DAC is connected
 i2c = board.I2C()
@@ -52,44 +48,8 @@ if tlv320_present:
     mixer = audiomixer.Mixer(voice_count=2, **audio_config)
     audio.play(mixer)
 
-mouse_interface_index, mouse_endpoint_address = None, None
-mouse = None
-mouse_was_attached = None
-
-if "use_mouse" in config.launcher and config.launcher["use_mouse"]:
-
-    # scan for connected USB device and loop over any found
-    for device in usb.core.find(find_all=True):
-        config_descriptor = adafruit_usb_host_descriptors.get_configuration_descriptor(device, 0)
-
-        _possible_interface_index, _possible_endpoint_address = adafruit_usb_host_descriptors.find_boot_mouse_endpoint(device)
-        if _possible_interface_index is not None and _possible_endpoint_address is not None:
-            mouse = device
-            mouse_interface_index = _possible_interface_index
-            mouse_endpoint_address = _possible_endpoint_address
-
-    mouse_was_attached = None
-    if mouse is not None:
-        # detach the kernel driver if needed
-        if (mouse_was_attached := mouse.is_kernel_driver_active(0)):
-            mouse.detach_kernel_driver(0)
-
-        # set configuration on the mouse so we can use it
-        mouse.set_configuration()
-        mouse_buf = array.array("b", [0] * 8)
-
-        # show cursor
-        graphics.cursor_tg.hidden = False
-
-def read_mouse() -> tuple|None:
-    if mouse:
-        try:
-            count = mouse.read(mouse_endpoint_address, mouse_buf, timeout=20)
-        except usb.core.USBTimeoutError:
-            count = 0
-        if count > 0:
-            return (
-                mouse_buf[1],              # x delta
-                mouse_buf[2],              # y delta
-                mouse_buf[0] & 0x01 != 0,  # left click
-            )
+if "BUTTON1" in dir(board) and "BUTTON2" in dir(board) and "BUTTON3" in dir(board):
+    from keypad import Keys
+    buttons = Keys((board.BUTTON1, board.BUTTON2, board.BUTTON3), value_when_pressed=False, pull=True)
+else:
+    buttons = None

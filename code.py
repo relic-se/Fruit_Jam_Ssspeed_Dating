@@ -4,6 +4,7 @@
 import displayio
 import fontio
 import math
+from micropython import const
 import sys
 import supervisor
 from terminalio import FONT
@@ -11,8 +12,12 @@ from terminalio import FONT
 from adafruit_display_text.label import Label
 from adafruit_display_text.text_box import TextBox
 import adafruit_imageload
+import adafruit_usb_host_mouse
+import asyncio
 from font_knewave_outline_webfont_18 import FONT as FONT_TITLE
+import relic_usb_host_gamepad
 
+import config
 import engine
 import hardware
 import sound
@@ -144,41 +149,103 @@ def finish() -> None:
             on_complete=lambda: engine.Fade(reverse=True),
         )
 
-# initial display refresh
-graphics.refresh()
+ACTION_SELECT = const(0)
+ACTION_UP     = const(1)
+ACTION_DOWN   = const(2)
+ACTION_PAUSE  = const(3)
+ACTION_QUIT   = const(4)
 
-while True:
+def do_action(action:int) -> None:
+    if action == ACTION_SELECT:
+        sound.play_sfx(sound.SFX_CLICK)
+        if not started:
+            start()
+        else:
+            finish()
+    elif action == ACTION_QUIT:
+        supervisor.reload()
 
-    # handle keyboard input
-    while (c := supervisor.runtime.serial_bytes_available) > 0:
-        key = sys.stdin.read(c)
+async def mouse_task() -> None:
+    while True:
+        if (mouse := adafruit_usb_host_mouse.find_and_init_boot_mouse("bitmaps/cursor.bmp")) is not None:
+            graphics.root_group.append(mouse.tilegrid)
+            timeouts = 0
+            while timeouts < 9999:
+                pressed_btns = mouse.update()
+                if pressed_btns is None:
+                    timeouts += 1
+                else:
+                    timeouts = 0
+                    if "left" in pressed_btns:
+                        # TODO: define selected based on position
+                        do_action(ACTION_SELECT)
+                await asyncio.sleep(1/config.TARGET_FRAME_RATE)
+            graphics.root_group.remove(mouse.tilegrid)
+        await asyncio.sleep(1)
 
-        # up key
-        if key == "\x1b[A":
-            pass
+async def gamepad_task() -> None:
+    gamepad = relic_usb_host_gamepad.Gamepad()
+    while True:
+        if gamepad.update():
+            if gamepad.buttons.UP.pressed or gamepad.buttons.JOYSTICK_UP.pressed:
+                do_action(ACTION_UP)
+            elif gamepad.buttons.DOWN.pressed or gamepad.buttons.JOYSTICK_DOWN.pressed:
+                do_action(ACTION_DOWN)
+            elif gamepad.buttons.A.pressed:
+                do_action(ACTION_SELECT)
+            elif gamepad.buttons.START.pressed:
+                do_action(ACTION_PAUSE)
+            elif gamepad.buttons.HOME.pressed:
+                do_action(ACTION_QUIT)
+        elif not gamepad.connected:
+            await asyncio.sleep(1)
+        else:
+            await asyncio.sleep(1/config.TARGET_FRAME_RATE)
 
-        # down key
-        elif key == "\x1b[B":
-            pass
+async def keyboard_task() -> None:
+    while True:
+        # handle keyboard input
+        while (c := supervisor.runtime.serial_bytes_available) > 0:
+            key = sys.stdin.read(c)
+            if key == "\x1b[A":  # up key
+                do_action(ACTION_UP)
+            elif key == "\x1b[B":  # down key
+                do_action(ACTION_DOWN)
+            elif key == "\n" or key.lower() == "z":  # enter
+                do_action(ACTION_SELECT)
+            elif key == "\x1b":  # escape
+                do_action(ACTION_PAUSE)
+            elif key.lower() == "q":
+                do_action(ACTION_QUIT)
+        await asyncio.sleep(1/config.TARGET_FRAME_RATE)
 
-        # enter
-        elif key == "\n":
-            if not started:
-                start()
-            else:
-                finish()
+if hardware.buttons is not None:
+    async def buttons_task() -> None:
+        while True:
+            if (event := hardware.buttons.events.get()):
+                if event.pressed:
+                    if event.key_number == 0:
+                        do_action(ACTION_DOWN)
+                    elif event.key_number == 1:
+                        do_action(ACTION_SELECT)
+                    elif event.key_number == 2:
+                        do_action(ACTION_UP)
+            await asyncio.sleep(1/config.TARGET_FRAME_RATE)
 
-    # handle mouse input
-    if (mouse := hardware.read_mouse()) is not None:
-        mouse_x, mouse_y, mouse_click = mouse
-        graphics.cursor_tg.x = min(max(graphics.cursor_tg.x + mouse_x, 0), graphics.display.width - 1)
-        graphics.cursor_tg.y = min(max(graphics.cursor_tg.y + mouse_y, 0), graphics.display.height - 1)
-        if mouse_click:
-            sound.play_sfx(sound.SFX_CLICK)
-            if not started:
-                start()
-            else:
-                finish()
+async def engine_task() -> None:
+    while True:
+        engine.update()
+        await graphics.refresh()
 
-    engine.update()
-    graphics.refresh()
+async def main():
+    tasks = [
+        asyncio.create_task(mouse_task()),
+        asyncio.create_task(gamepad_task()),
+        asyncio.create_task(keyboard_task()),
+        asyncio.create_task(engine_task()),
+    ]
+    if hardware.buttons is not None:
+        tasks.append(asyncio.create_task(buttons_task()))
+    await asyncio.gather(*tasks)
+
+asyncio.run(main())
