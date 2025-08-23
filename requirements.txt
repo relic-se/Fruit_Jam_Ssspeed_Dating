@@ -3,5 +3,7 @@ adafruit_fruitjam
 adafruit_imageload
 adafruit_pathlib
 adafruit_tlv320
-adafruit_usb_host_descriptors
+adafruit_usb_host_mouse
+asyncio
 font_knewave_outline_webfont_18
+relic_usb_host_gamepad
