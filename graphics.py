@@ -9,6 +9,8 @@ import adafruit_imageload
 
 import config
 
+displayio.release_displays()
+
 # setup display
 request_display_config(320, 240)
 display = supervisor.runtime.display
