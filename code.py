@@ -29,8 +29,8 @@ bg_tg = displayio.TileGrid(bg_bmp, pixel_shader=bg_palette)
 graphics.main_group.append(bg_tg)
 
 # add blinka
-snake_bmp, snake_palette = adafruit_imageload.load("bitmaps/snake.bmp")
-snake_palette.make_transparent(4)
+snake_bmp, snake_palette = adafruit_imageload.load("bitmaps/ozzie.bmp")
+snake_palette.make_transparent(5)
 snake_tg = displayio.TileGrid(snake_bmp, pixel_shader=snake_palette,
                               x=graphics.display.width, y=25)
 graphics.main_group.append(snake_tg)

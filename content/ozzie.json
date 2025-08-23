@@ -1,6 +1,6 @@
 {
-    "name": "Ozzie",
     "bitmap": "bitmaps/ozzie.bmp",
+    "bitmap_transparent": 5,
     "dialogue": [
         "Hi, I'm Ozzie. Sssorry if I seem awkward, I don't normally do things like thisss and wanted to challenge myssself.",
         "What bringsss you here tonight?",
