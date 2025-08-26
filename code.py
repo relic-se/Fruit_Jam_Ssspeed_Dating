@@ -1,6 +1,14 @@
 # SPDX-FileCopyrightText: 2025 Cooper Dalrymple (@relic-se)
 #
 # SPDX-License-Identifier: GPLv3
+
+# load included modules if we aren't installed on the root path
+if len(__file__.split("/")[:-1]) > 1:
+    import adafruit_pathlib as pathlib
+    if (modules_directory := pathlib.Path("/".join(__file__.split("/")[:-1])) / "lib").exists():
+        import sys
+        sys.path.append(str(modules_directory.absolute()))
+
 import displayio
 import fontio
 import math
