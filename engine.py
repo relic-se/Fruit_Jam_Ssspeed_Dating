@@ -2,56 +2,21 @@
 #
 # SPDX-License-Identifier: GPLv3
 import displayio
+import fontio
+import math
+from terminalio import FONT
 
-import adafruit_imageload
+from adafruit_display_text.text_box import TextBox
 
 import config
 import graphics
+import sound
 
-# create list which will hold all game objects
-class Entities(list):
+current_event = None
 
-    def __init__(self):
-        super().__init__()
-
-    def update(self) -> None:
-        for x in self:
-            x.update()
-
-entities = Entities()
-
-class Entity(displayio.Group):
-
-    def __init__(self, on_complete:callable=None, **kwargs):
-        global entities
-        super().__init__(**kwargs)
-        if self not in entities:
-            entities.append(self)
-        self._on_complete = on_complete
-
-    def update(self) -> None:
-        pass
-    
-    def complete(self) -> None:
-        global entities
-        if self in entities:
-            entities.remove(self)
-        if self._on_complete is not None and callable(self._on_complete):
-            self._on_complete()
-        del self
-
-    @property
-    def active(self) -> bool:
-        global entities
-        return self in entities
-    
-    @property
-    def on_complete(self) -> callable:
-        return self._on_complete
-    
-    @on_complete.setter
-    def on_complete(self, value:callable) -> None:
-        self._on_complete = value
+def update() -> None:
+    if current_event is not None:
+        current_event.update()
 
 class Event:
 
@@ -72,90 +37,126 @@ class Event:
         self._on_complete = value
 
     def play(self) -> None:
+        global current_event
+        if current_event is not None:
+            current_event.stop()
         self._active = True
+        current_event = self
 
     def stop(self) -> None:
         self._active = False
+
+    def update(self) -> None:
+        pass
         
     def complete(self) -> None:
+        global current_event
         self.stop()
+        if current_event is self:
+            current_event = None
         if callable(self._on_complete):
             self._on_complete()
 
-class Sequence(Event):
+class Sequence:
     def __init__(self, *events):
-        super().__init__()
-        self._events = list(events)
+        self._events = []
         self._index = 0
-        self._active = False
         if len(events):
             for event in events:
                 self.append(event)
 
     def append(self, event) -> None:
-        event.on_complete = self._next
+        if isinstance(event, Event):
+            event.on_complete = self._next
         self._events.append(event)
 
     def remove(self, event) -> None:
         self._events.remove(event)
+
+    def _next(self) -> None:
+        if self._index + 1 < len(self._events):
+            self._index += 1
+            self.play()
+        else:
+            self.stop()
     
     @property
     def playing(self) -> bool:
         return self._active
     
     def play(self) -> None:
-        pass
+        self._active = True
+        event = self._events[self._index]
+        if isinstance(event, Event):
+            event.play()
+        elif callable(event):
+            event()
+            self._next()
 
     def stop(self) -> None:
-        pass
+        self._active = False
+        event = self._events[self._index]
+        if isinstance(event, Event):
+            event.stop()
 
-# load the fade bitmap
-fade_bmp, fade_palette = adafruit_imageload.load("bitmaps/fade.bmp")
-fade_palette.make_transparent(1)
-FADE_TILE_SIZE = fade_bmp.height
-FADE_TILES = fade_bmp.width // FADE_TILE_SIZE
+class Entity(Event):
+
+    def __init__(self, parent:displayio.Group, **kwargs):
+        super().__init__(**kwargs)
+        self._parent = parent
+        self._group = displayio.Group()
+
+    def play(self) -> None:
+        super().play()
+        if self._group not in self._parent:
+            self._parent.append(self._group)
+    
+    def complete(self) -> None:
+        if self._group in self._parent:
+            self._parent.remove(self._group)
+        del self._group
+        super().complete()
 
 class Fade(Entity):
+
     def __init__(self, duration:float=1, reverse:bool=False, **kwargs):
-        global fade_bmp, fade_palette
-        super().__init__(**kwargs)
+        super().__init__(parent=graphics.overlay_group, **kwargs)
         self._speed = config.TARGET_FRAME_RATE // duration
         self._reverse = reverse
         self._index = 0
         self._counter = 0
         self._tg = displayio.TileGrid(
-            bitmap=fade_bmp, pixel_shader=fade_palette,
-            width=graphics.display.width//FADE_TILE_SIZE, height=graphics.display.height//FADE_TILE_SIZE,
-            tile_width=FADE_TILE_SIZE, tile_height=FADE_TILE_SIZE,
-            default_tile=0 if not reverse else FADE_TILES-1,
+            bitmap=graphics.fade_bmp, pixel_shader=graphics.fade_palette,
+            width=graphics.display.width//graphics.FADE_TILE_SIZE, height=graphics.display.height//graphics.FADE_TILE_SIZE,
+            tile_width=graphics.FADE_TILE_SIZE, tile_height=graphics.FADE_TILE_SIZE,
+            default_tile=0 if not reverse else graphics.FADE_TILES-1,
         )
-        self.append(self._tg)
-        graphics.overlay_group.append(self)
+        self._group.append(self._tg)
 
     def update(self) -> None:
         super().update()
-        if self.active:
+        if self._active:
             self._counter += 1
             if self._counter > self._speed:
                 self._index += 1
-                if self._index < FADE_TILES:
+                if self._index < graphics.FADE_TILES:
                     self._update_tile()
                 else:
                     self.complete()
 
     def _update_tile(self) -> None:
-        index = self._index if not self._reverse else FADE_TILES-self._index-1
+        index = self._index if not self._reverse else graphics.FADE_TILES-self._index-1
         for x in range(self._tg.width):
             for y in range(self._tg.height):
                 self._tg[x, y] = index
-
-    def __del__(self) -> None:
-        self.remove(self._tg)
+    
+    def complete(self) -> None:
+        self._group.remove(self._tg)
         del self._tg
-        graphics.overlay_group.remove(self)
-        super().__del__()
+        super().complete()
 
-class Animator(Entity):
+class Animator(Event):
+
     def __init__(self, target:displayio.Group, end:tuple, start:tuple=None, duration:float=1, **kwargs):
         super().__init__(**kwargs)
         self._target = target
@@ -175,7 +176,7 @@ class Animator(Entity):
 
     def update(self) -> None:
         super().update()
-        if self.active:
+        if self._active:
             if self.animating:
                 self._target.x = (self._frames * self._velocity[0]) + self._start[0]
                 self._target.y = (self._frames * self._velocity[1]) + self._start[1]
@@ -184,6 +185,106 @@ class Animator(Entity):
                 self._target.x, self._target.y = self._end
                 self.complete()
 
-def update() -> None:
-    # update all game entities
-    entities.update()
+DIALOG_LINE_WIDTH = ((graphics.display.width // graphics.WINDOW_TILE_SIZE) - 10) * graphics.WINDOW_TILE_SIZE
+
+class Dialog(Entity):
+
+    def __init__(self, text:str="", font:fontio.FontProtocol=FONT, voice:int=1, **kwargs):
+        super().__init__(parent=graphics.upper_group, **kwargs)
+
+        try:
+            bb_width, bb_height, bb_x_offset, bb_y_offset = font.get_bounding_box()
+        except ValueError:
+            bb_width, bb_height = font.get_bounding_box()
+            bb_x_offset, bb_y_offset = 0, 0
+
+        words = text.split(" ")
+        line_width = DIALOG_LINE_WIDTH // bb_width
+        lines = []
+        line = ""
+        for word in words:
+            if len(line) + len(word) + 1 > line_width:
+                lines.append(line.rstrip())
+                line = ""
+            line += word + " "
+        if len(line):
+            lines.append(line.rstrip())
+
+        text_width = max([len(x)+1 for x in lines]) * bb_width
+        text_height = len(lines) * (bb_height + 4) - 4
+
+        width = max(math.ceil(text_width / graphics.WINDOW_TILE_SIZE) + 2, 3)
+        height = max(math.ceil(text_height / graphics.WINDOW_TILE_SIZE) + 2, 3)
+        
+        # setup window background grid
+        self._tg = displayio.TileGrid(
+            bitmap=graphics.window_bmp, pixel_shader=graphics.window_palette,
+            width=width, height=height,
+            tile_width=graphics.WINDOW_TILE_SIZE, tile_height=graphics.WINDOW_TILE_SIZE, default_tile=4,
+        )
+        self._group.append(self._tg)
+
+        # set corners
+        self._tg[0, 0] = 0
+        self._tg[self._tg.width-1, 0] = 2
+        self._tg[0, self._tg.height-1] = 6
+        self._tg[self._tg.width-1, self._tg.height-1] = 8
+
+        # set borders
+        for x in range(1, self._tg.width-1):
+            self._tg[x, 0] = 1
+            self._tg[x, self._tg.height-1] = 7
+        for y in range(1, self._tg.height-1):
+            self._tg[0, y] = 3
+            self._tg[self._tg.width-1, y] = 5
+
+        # setup textbox
+        self._tb = TextBox(
+            font=font, text=text,
+            width=text_width, height=text_height,
+            x=graphics.WINDOW_TILE_SIZE, y=graphics.WINDOW_TILE_SIZE+4,
+        )
+        self._group.append(self._tb)
+
+        # set position
+        self._group.x = (graphics.display.width - self.width) // 2
+        self._group.y = (graphics.display.height - self.height) - 16
+
+        # configure voice
+        self._voice = voice
+        self._voice_len = len(text) // 10
+        self._voice_index = -1
+        self._next_voice()
+
+    def _next_voice(self) -> None:
+        if self.voice_playing:
+            self._voice_index += 1
+            sound.play_voice(self._voice)
+
+    @property
+    def voice_playing(self) -> bool:
+        return self._voice_index < self._voice_len
+
+    @property
+    def width(self) -> int:
+        return self._tg.width * graphics.WINDOW_TILE_SIZE
+        
+    @property
+    def height(self) -> int:
+        return self._tg.height * graphics.WINDOW_TILE_SIZE
+    
+    @property
+    def text(self) -> str:
+        return self._tb.text
+    
+    def update(self) -> None:
+        super().update()
+        if self.voice_playing and not sound.is_voice_playing():
+            self._next_voice()
+    
+    def complete(self) -> None:
+        self._group.remove(self._tg)
+        del self._tg
+        self._group.remove(self._tb)
+        del self._tb
+        super().complete()

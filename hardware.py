@@ -28,13 +28,12 @@ if tlv320_present:
         bit_depth=config.BIT_DEPTH,
     )
 
-    if "sound" in config.launcher and config.launcher["sound"] == "speaker":
+    if config.launcher.audio_output_speaker:
         dac.speaker_output = True
-        dac.dac_volume = config.launcher["tlv320"].get("volume", 5)  # dB
     else:
-        # use headphones
         dac.headphone_output = True
-        dac.dac_volume = config.launcher["tlv320"].get("volume", 0) if "tlv320" in config.launcher else 0  # dB
+        dac.headphone_volume = -15
+    dac.dac_volume = config.launcher.audio_volume_db
 
     # setup audio output
     audio_config = {
@@ -45,7 +44,7 @@ if tlv320_present:
         "samples_signed": config.BIT_DEPTH >= 16,
     }
     audio = audiobusio.I2SOut(board.I2S_BCLK, board.I2S_WS, board.I2S_DIN)
-    mixer = audiomixer.Mixer(voice_count=2, **audio_config)
+    mixer = audiomixer.Mixer(voice_count=3, **audio_config)
     audio.play(mixer)
 
 if "BUTTON1" in dir(board) and "BUTTON2" in dir(board) and "BUTTON3" in dir(board):
