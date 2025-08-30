@@ -17,6 +17,7 @@ from circup.commands import main as circup_cli
 
 ASSET_DIRS = (
     "bitmaps",
+    "content",
     "sounds",
 )
 
