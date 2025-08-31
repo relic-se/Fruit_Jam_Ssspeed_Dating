@@ -11,6 +11,7 @@ if hardware.tlv320_present:
     # load wave files
     MUSIC = audiocore.WaveFile("sounds/music.wav")
     SFX_CLICK = audiocore.WaveFile("sounds/click.wav")
+    SFX_BUZZER = audiocore.WaveFile("sounds/buzzer.wav")
 
     # play wave file
     hardware.mixer.play(MUSIC, voice=0, loop=True)
@@ -23,7 +24,9 @@ if hardware.tlv320_present:
     ])
 
 else:
+    MUSIC = None
     SFX_CLICK = None
+    SFX_BUZZER = None
     VOICE = tuple([(None,) for i in range(2)])
 
 def play_sfx(wave:audiocore.WaveFile) -> None:

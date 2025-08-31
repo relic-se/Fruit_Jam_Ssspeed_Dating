@@ -202,17 +202,6 @@ class Dialog(displayio.Group):
     def __init__(self, text:str, title:str="", title_right:bool=False, line_width:int=None, font:fontio.FontProtocol=FONT, title_font:fontio.FontProtocol=FONT, **kwargs):
         super().__init__(**kwargs)
 
-        if text.startswith("_"):
-            text = text[1:]
-            title = ""
-        
-        if text.startswith("[buzzer]"):
-            text = text[len("[buzzer]"):]
-            title = ""
-            # TODO: buzzer sound (on play?)
-
-        # TODO: Change title position (left/right)
-
         try:
             bb_width, bb_height, bb_x_offset, bb_y_offset = font.get_bounding_box()
         except ValueError:
@@ -319,6 +308,17 @@ class Dialog(displayio.Group):
 class VoiceDialog(Entity):
 
     def __init__(self, text:str, voice:int=1, on_complete:callable=None, **kwargs):
+        command = None
+        if text.startswith("_"):
+            command = "_"
+        elif text.startswith("[buzzer]"):
+            command = "[buzzer]"
+            sound.play_sfx(sound.SFX_BUZZER)
+        if command is not None:
+            voice = 0
+            text = text[len(command):].lstrip()
+            kwargs["title"] = ""
+
         super().__init__(parent=graphics.upper_group, on_complete=on_complete)
 
         self._dialog = Dialog(text, **kwargs)
