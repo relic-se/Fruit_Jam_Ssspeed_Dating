@@ -16,7 +16,7 @@
                 "message": "You're not here to find true love? I'm trying again.",
                 "score": 2,
                 "response": [
-                    "I don't really beleive in true love or sssoulmatesss.",
+                    "I don't really believe in true love or sssoulmatesss.",
                     "Have you found a date at one of thessse thingsss?"
                 ]
             },
@@ -130,5 +130,9 @@
                 ]
             }
         ]
+    ],
+    "epilogue": [
+        "I wuv you <3",
+        "Let's meet up again"
     ]
 }

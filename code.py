@@ -19,14 +19,14 @@ from adafruit_display_text.label import Label
 import adafruit_imageload
 import adafruit_usb_host_mouse
 import asyncio
-from font_knewave_outline_webfont_18 import FONT as FONT_TITLE
+from font_knewave_webfont_24 import FONT as FONT_TITLE
 import relic_usb_host_gamepad
 
 import config
 import engine
 import graphics
 import hardware
-import level
+import scene
 import sound
 
 # add background image
@@ -56,7 +56,7 @@ def start() -> None:
         title_label.hidden = True
         engine.Sequence(
             engine.Fade(),
-            lambda: level.Level().start()
+            lambda: scene.Level().start()
         ).play()
 
 ACTION_SELECT = const(0)
@@ -75,6 +75,8 @@ def do_action(action:int) -> None:
             engine.current_event.complete()
         elif isinstance(engine.current_event, engine.OptionDialog):
             engine.current_event.select()
+        elif isinstance(engine.current_event, engine.Results):
+            engine.current_event.complete()
     elif action == ACTION_QUIT:
         supervisor.reload()
 

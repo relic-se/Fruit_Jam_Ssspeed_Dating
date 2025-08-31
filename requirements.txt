@@ -6,5 +6,5 @@ adafruit_simplemath
 adafruit_tlv320
 adafruit_usb_host_mouse
 asyncio
-font_knewave_outline_webfont_18
+font_knewave_webfont_24
 relic_usb_host_gamepad

@@ -6,13 +6,15 @@ import fontio
 import math
 import random
 from terminalio import FONT
+import vectorio
 
 from adafruit_display_text.label import Label
 from adafruit_display_text.text_box import TextBox
+from font_knewave_webfont_24 import FONT as FONT_TITLE
 
 import config
 import graphics
-import level
+import scene
 import sound
 
 current_event = None
@@ -324,6 +326,16 @@ class VoiceDialog(Entity):
         self._dialog = Dialog(text, **kwargs)
         self._group.append(self._dialog)
 
+        # arrow indicator
+        self._group.append(Label(
+            font=FONT, text=">",
+            anchor_point=(.5, 1),
+            anchored_position=(
+                self._dialog.x + self._dialog.width - graphics.WINDOW_TILE_SIZE,
+                self._dialog.y + self._dialog.height - graphics.WINDOW_TILE_SIZE//2
+            ),
+        ))
+
         # configure voice
         self._voice = voice
         self._voice_len = len(text) // 10
@@ -410,8 +422,8 @@ class OptionDialog(Entity):
         option = self._options[self._selected]
         if type(option) is dict:
 
-            if level.current_level is not None:
-                level.current_level.score += option.get("score", 0)
+            if scene.current_scene is not None:
+                scene.current_scene.score += option.get("score", 0)
 
             if type(option.get("message")) is list:
                 self._extra = option.get("message")[1:]
@@ -449,12 +461,117 @@ class OptionDialog(Entity):
         else:
             VoiceDialog(
                 self._response[self._response_index],
-                title=(level.current_level.title if level.current_level is not None else ""),
+                title=(scene.current_scene.title if scene.current_scene is not None else ""),
                 title_right=True,
-                voice=(level.current_level.voice if level.current_level is not None else 0),
+                voice=(scene.current_scene.voice if scene.current_scene is not None else 0),
                 on_complete=self._next_response_dialog,
             ).play()
     
     def complete(self) -> None:
         del self._dialogs
         super().complete()
+
+class Heart(displayio.Group):
+
+    def __init__(self, size:int, color:int=0xffb6de, **kwargs):
+        super().__init__(**kwargs)
+
+        palette = displayio.Palette(1)
+        palette[0] = color
+
+        left_circle = vectorio.Circle(
+            pixel_shader=palette, radius=size//4,
+            x=-size//4, y=-size//4,
+        )
+        self.append(left_circle)
+
+        right_circle = vectorio.Circle(
+            pixel_shader=palette, radius=size//4,
+            x=size//4, y=-size//4,
+        )
+        self.append(right_circle)
+
+        angle = math.pi / 4
+        x = int(right_circle.x + right_circle.radius * math.cos(angle))
+        y = int(right_circle.y + right_circle.radius * math.sin(angle))
+
+        self.append(vectorio.Polygon(
+            pixel_shader=palette,
+            points=[
+                (size//2, -size//4),
+                (x, y),
+                (0, size//2),
+                (-x, y),
+                (-size//2, -size//4),
+            ],
+        ))
+
+class Results(Entity):
+
+    def __init__(self):
+        super().__init__(parent=graphics.upper_group)
+
+        # background heart
+        self._group.append(Heart(
+            size=graphics.display.width//4,
+            x=graphics.display.width//2,
+            y=graphics.display.height//4,
+        ))
+
+        # setup graph background grid
+        tg = displayio.TileGrid(
+            bitmap=graphics.window_bmp, pixel_shader=graphics.window_palette,
+            width=graphics.display.width//graphics.WINDOW_TILE_SIZE,
+            height=graphics.display.height//2//graphics.WINDOW_TILE_SIZE,
+            y=graphics.display.height//2,
+            tile_width=graphics.WINDOW_TILE_SIZE, tile_height=graphics.WINDOW_TILE_SIZE, default_tile=4,
+        )
+        for x in range(0, tg.width):
+            tg[x, 0] = 1 # top border
+        self._group.append(tg)
+
+        # setup title label
+        self._group.append(Label(
+            font=FONT_TITLE, text="Thanks for Playing!",
+            anchor_point=(.5, .5),
+            anchored_position=(graphics.display.width//2, graphics.display.height//4),
+        ))
+
+        # setup level graphs
+        max_score, min_score = max(scene.level_scores), min(scene.level_scores)
+        score_range = max_score - min_score
+
+        width = graphics.display.width//len(scene.LEVELS)
+        label_y = graphics.display.height - 16
+        bar_height = graphics.display.height//4
+        bar_width = 16
+        bar_y = graphics.display.height - 32
+
+        for index, name in enumerate(scene.LEVELS):
+            score = scene.level_scores[index] - min_score
+            x = width * index + width // 2
+
+            label = Label(
+                font=FONT, text=(name[0].upper()+name[1:]),
+                anchor_point=(.5, .5),
+                anchored_position=(x, label_y),
+            )
+            self._group.append(label)
+
+            bar_palette = displayio.Palette(1)
+            bar_palette[0] = (min(0xff * (score_range - score) * 2 // score_range, 0xff) << 16) | (min(0xff * score * 2 // score_range, 0xff) << 8)
+            bar = vectorio.Rectangle(
+                pixel_shader=bar_palette,
+                width=bar_width,
+                height=max(bar_height * score // score_range, 2),
+                x=x-bar_width//2, y=bar_y,
+            )
+            bar.y -= bar.height
+            self._group.append(bar)
+
+        # setup arrow indicator
+        self._group.append(Label(
+            font=FONT, text=">",
+            anchor_point=(1, 0),
+            anchored_position=(graphics.display.width-8, graphics.display.height//2+graphics.WINDOW_TILE_SIZE),
+        ))

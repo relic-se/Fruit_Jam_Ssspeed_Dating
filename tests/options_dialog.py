@@ -1,17 +1,8 @@
 # SPDX-FileCopyrightText: 2025 Cooper Dalrymple (@relic-se)
 #
 # SPDX-License-Identifier: GPLv3
-
-# load included modules if we aren't installed on the root path
-if len(__file__.split("/")[:-1]) > 1:
-    import adafruit_pathlib as pathlib
-    if (modules_directory := pathlib.Path("/".join(__file__.split("/")[:-1])) / "lib").exists():
-        import sys
-        sys.path.append(str(modules_directory.absolute()))
-
 import asyncio
 import displayio
-import sys
 
 import adafruit_imageload
 import adafruit_usb_host_mouse
@@ -32,7 +23,7 @@ options = [
         "message": "You're not here to find true love? I'm trying again.",
         "score": 2,
         "response": [
-            "I don't really beleive in true love or sssoulmatesss.",
+            "I don't really believe in true love or sssoulmatesss.",
             "Have you found a date at one of thessse thingsss?"
         ]
     },

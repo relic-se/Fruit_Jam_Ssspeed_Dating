@@ -1,0 +1,161 @@
+# SPDX-FileCopyrightText: 2025 Cooper Dalrymple (@relic-se)
+#
+# SPDX-License-Identifier: GPLv3
+import displayio
+import json
+
+import adafruit_imageload
+
+import engine
+import graphics
+
+SNAKE_X = 124
+SNAKE_Y = 211
+
+LEVELS = (
+    "ozzie",
+    "max",
+    "ellis",
+)
+
+current_scene = None
+level_index = 0
+level_scores = [0 for x in LEVELS]
+
+class Scene:
+
+    def __init__(self, name:str):
+        self._name = name
+        
+        # load data
+        with open("content/{:s}.json".format(self._name), "r") as f:
+            self._data = json.load(f)
+
+        # load snake bitmap
+        self._snake_bmp, snake_palette = adafruit_imageload.load("bitmaps/{:s}.bmp".format(self._name))
+        snake_palette.make_transparent(self._data["bitmap_transparent"])
+        self._snake_tg = displayio.TileGrid(self._snake_bmp, pixel_shader=snake_palette)
+
+        self._dialog_index = -1
+        self._dialog_voice = self._data.get("voice", 1)
+
+        self._dialogue = self._get_dialogue()
+
+    def _get_dialogue(self) -> list:
+        raise NotImplementedError()
+
+    @property
+    def voice(self) -> int:
+        return self._dialog_voice
+    
+    @property
+    def title(self) -> str:
+        return self._name[0].upper() + self._name[1:]
+
+    def start(self) -> None:
+        global current_scene
+        if current_scene is not None:
+            current_scene.stop()
+        current_scene = self
+        graphics.lower_group.append(self._snake_tg)
+        engine.Sequence(
+            engine.Animator(target=self._snake_tg, start=(SNAKE_X, SNAKE_Y), end=(SNAKE_X, SNAKE_Y-self._snake_bmp.height)),
+            self._next_dialog
+        ).play()
+
+    def stop(self) -> None:
+        global current_scene
+        if current_scene is self:
+            current_scene = None
+
+    def _next_dialog(self) -> None:
+        self._dialog_index += 1
+        if self._dialog_index >= len(self._dialogue):
+            self.complete()
+        else:
+            self._do_dialog(self._dialogue[self._dialog_index])
+
+    def _do_dialog(self, item:str|list) -> None:
+        if type(item) is str:
+            engine.VoiceDialog(
+                item, title=self.title, title_right=True,
+                voice=self._dialog_voice, on_complete=self._next_dialog
+            ).play()
+        elif type(item) is list:
+            engine.OptionDialog(item, on_complete=self._next_dialog).play()
+
+    def complete(self) -> None:
+        self.stop()
+
+    def _next_scene(self) -> None:
+        graphics.lower_group.remove(self._snake_tg)
+        del self._snake_tg
+        del self._data
+
+class Level(Scene):
+
+    def __init__(self, name:str=None):
+        super().__init__(name if name is not None else LEVELS[0])
+        self._score = 0
+
+    def _get_dialogue(self) -> list:
+        return self._data["dialogue"]
+
+    @property
+    def score(self) -> int:
+        return self._score
+    
+    @score.setter
+    def score(self, value: int) -> None:
+        self._score = value
+
+    def complete(self) -> None:
+        super().complete()
+        engine.Sequence(
+            engine.Animator(target=self._snake_tg, start=(SNAKE_X, SNAKE_Y-self._snake_bmp.height), end=(SNAKE_X, SNAKE_Y)),
+            self._next_scene
+        ).play()
+
+    def _next_scene(self) -> None:
+        global level_index, level_scores
+        super()._next_scene()
+
+        level_scores[level_index] = self.score
+        level_index += 1
+        if level_index < len(LEVELS):
+            Level(LEVELS[level_index]).start()
+        else:
+            Epilogue().start()
+
+class Epilogue(Scene):
+
+    def __init__(self):
+        # determine the highest scoring level
+        name = LEVELS[level_scores.index(max(level_scores))]
+        super().__init__(name)
+        self._results = False
+
+    def _get_dialogue(self) -> list:
+        return self._data["epilogue"]
+    
+    def complete(self) -> None:
+        if not self._results:
+            self._results = True
+            engine.Results().play()
+        else:
+            super().complete()
+            engine.Sequence(
+                engine.Fade(reverse=True).play(),
+                self._next_scene
+            ).play()
+
+    def _next_scene(self) -> None:
+        global level_scores, level_index
+        super()._next_scene()
+
+        # reset level and scores
+        level_index = 0
+        for i in range(len(level_scores)):
+            level_scores[i] = 0
+
+        # TODO: return to title

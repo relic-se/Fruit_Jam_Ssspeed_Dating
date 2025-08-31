@@ -3,18 +3,24 @@
 # SPDX-License-Identifier: GPLv3
 import asyncio
 import displayio
+import random
 
 import adafruit_imageload
 
 import engine
 import graphics
+import scene
 
 # add background image
 bg_bmp, bg_palette = adafruit_imageload.load("bitmaps/bg.bmp")
 bg_tg = displayio.TileGrid(bg_bmp, pixel_shader=bg_palette)
 graphics.lower_group.append(bg_tg)
 
-engine.VoiceDialog(text="The quick brown fox jumps over the lazy dog. " * 3, title="Lorem Ipsum Dolor Sit Amet").play()
+# simulate level scores
+for i in range(len(scene.level_scores)):
+    scene.level_scores[i] = random.randint(-20, 30)
+
+engine.Results().play()
 
 graphics.main_group.hidden = False
 
