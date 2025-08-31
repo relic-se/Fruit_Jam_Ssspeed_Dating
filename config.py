@@ -99,7 +99,7 @@ class LauncherConfig:
     
     @property
     def audio_volume(self) -> int:
-        return min(max(int(self._data["audio"].get("volume", 8)), 1), 20)
+        return min(max(int(self._data["audio"].get("volume", 12)), 1), 20)
     
     @audio_volume.setter
     def audio_volume(self, value: int) -> None:

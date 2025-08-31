@@ -54,8 +54,10 @@ def start() -> None:
     if not started:
         started = True
         title_label.hidden = True
-        graphics.main_group.hidden = False
-        level.Level(level.LEVELS[0]).start()
+        engine.Sequence(
+            engine.Fade(),
+            lambda: level.Level().start()
+        ).play()
 
 ACTION_SELECT = const(0)
 ACTION_UP     = const(1)
@@ -69,17 +71,17 @@ def do_action(action:int) -> None:
         sound.play_sfx(sound.SFX_CLICK)
         if not started:
             start()
-        elif isinstance(engine.current_event, engine.Dialog):
+        elif isinstance(engine.current_event, engine.VoiceDialog):
             engine.current_event.complete()
+        elif isinstance(engine.current_event, engine.OptionDialog):
+            engine.current_event.select()
     elif action == ACTION_QUIT:
         supervisor.reload()
 
 async def mouse_task() -> None:
     while True:
         if (mouse := adafruit_usb_host_mouse.find_and_init_boot_mouse("bitmaps/cursor.bmp")) is not None:
-            mouse.tilegrid.x = graphics.display.width // 2
-            mouse.tilegrid.y = graphics.display.height // 2
-            graphics.root_group.append(mouse.tilegrid)
+            graphics.set_cursor(mouse.tilegrid)
             timeouts = 0
             while timeouts < 9999:
                 pressed_btns = mouse.update()
@@ -91,7 +93,7 @@ async def mouse_task() -> None:
                         # TODO: define selected based on position
                         do_action(ACTION_SELECT)
                 await asyncio.sleep(1/config.TARGET_FRAME_RATE)
-            graphics.root_group.remove(mouse.tilegrid)
+            graphics.reset_cursor()
         await asyncio.sleep(1)
 
 async def gamepad_task() -> None:

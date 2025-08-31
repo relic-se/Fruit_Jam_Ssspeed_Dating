@@ -12,6 +12,16 @@ import config
 
 displayio.release_displays()
 
+def copy_palette(palette:displayio.Palette) -> displayio.Palette:
+    clone = displayio.Palette(len(palette))
+    for i, color in enumerate(palette):
+        # Add color to new_palette
+        clone[i] = color
+        # Set new_palette color index transparency
+        if palette.is_transparent(i):
+            clone.make_transparent(i)
+    return clone
+
 # setup display
 request_display_config(320, 240)
 display = supervisor.runtime.display
@@ -52,3 +62,22 @@ FADE_TILES = fade_bmp.width // FADE_TILE_SIZE
 window_bmp, window_palette = adafruit_imageload.load("bitmaps/window.bmp")
 window_palette.make_transparent(1)
 WINDOW_TILE_SIZE = 8
+
+# mouse cursor
+cursor = None
+def set_cursor(tilegrid:displayio.TileGrid) -> None:
+    global cursor
+    if cursor is not None:
+        reset_cursor()
+    cursor = tilegrid
+    cursor.x = display.width // 2
+    cursor.y = display.height // 2
+    root_group.append(cursor)
+
+def reset_cursor():
+    global cursor
+    root_group.remove(cursor)
+    cursor = None
+
+def get_cursor_pos() -> tuple:
+    return (cursor.x, cursor.y, 0)

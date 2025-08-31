@@ -1,6 +1,5 @@
 {
     "bitmap_transparent": 5,
-    "voice": 2,
     "dialogue": [
         "Hi, I'm Ozzie. Sssorry if I seem awkward, I don't normally do things like thisss and wanted to challenge myssself.",
         "What bringsss you here tonight?",
@@ -103,7 +102,7 @@
                 ],
                 "score": 10,
                 "response": [
-                    "[buzzer] Okay Sssnakesss! Move to Sssnake Number two.",
+                    "[buzzer]Okay Sssnakesss! Move to Sssnake Number two.",
                     "Yum! I would love to invite you next time.",
                     "_Ozzie says as they excitedly look back over their shoulder as they move to the next table."
                 ]
@@ -115,7 +114,7 @@
                 ],
                 "score": 2,
                 "response": [
-                    "[buzzer] Okay Sssnakesss! Move to Sssnake Number two.",
+                    "[buzzer]Okay Sssnakesss! Move to Sssnake Number two.",
                     "_Ozzie offers you a sad smile and says...",
                     "Nice meeting you!",
                     "_before moving to the next table..."
@@ -125,9 +124,9 @@
                 "message": "Pretty basssic.",
                 "score": -5,
                 "response": [
-                    "[buzzer] Okay Sssnakesss! Move to Sssnake Number two.",
+                    "[buzzer]Okay Sssnakesss! Move to Sssnake Number two.",
                     "_Ozzie looks relieved at the sound of the buzzer.",
-                    "They slither off to the next table."
+                    "_They slither off to the next table."
                 ]
             }
         ]
