@@ -2,15 +2,12 @@
 #
 # SPDX-License-Identifier: GPLv3
 import displayio
-import fontio
-import math
 import random
 import supervisor
 from terminalio import FONT
 import vectorio
 
 from adafruit_display_text.label import Label
-from adafruit_display_text.text_box import TextBox
 import adafruit_imageload
 from font_knewave_webfont_24 import FONT as FONT_TITLE
 
@@ -202,116 +199,6 @@ class Animator(Event):
                 self._target.x, self._target.y = self._end
                 self.complete()
 
-DIALOG_LINE_WIDTH = ((graphics.display.width // graphics.WINDOW_TILE_SIZE) - 10) * graphics.WINDOW_TILE_SIZE
-
-class Dialog(displayio.Group):
-
-    def __init__(self, text:str, title:str="", title_right:bool=False, line_width:int=None, font:fontio.FontProtocol=FONT, title_font:fontio.FontProtocol=FONT, **kwargs):
-        super().__init__(**kwargs)
-
-        try:
-            bb_width, bb_height, bb_x_offset, bb_y_offset = font.get_bounding_box()
-        except ValueError:
-            bb_width, bb_height = font.get_bounding_box()
-            bb_x_offset, bb_y_offset = 0, 0
-
-        words = text.split(" ")
-        desired_line_width = (line_width if line_width else DIALOG_LINE_WIDTH) // bb_width
-        lines = []
-        line = ""
-        for word in words:
-            if len(line) + len(word) + 1 > desired_line_width:
-                lines.append(line.rstrip())
-                line = ""
-            line += word + " "
-        if len(line):
-            lines.append(line.rstrip())
-
-        text_width = line_width if line_width else max([len(x)+1 for x in lines]) * bb_width
-        text_height = len(lines) * (bb_height + 4) - 4
-
-        width = max(math.ceil(text_width / graphics.WINDOW_TILE_SIZE) + 2, 3)
-        height = max(math.ceil(text_height / graphics.WINDOW_TILE_SIZE) + 2, 3) + (2 if title else 0)
-        
-        # setup window background grid
-        self._tg_palette = graphics.copy_palette(graphics.window_palette)
-        self._tg_palette_default = self._tg_palette[2]
-        self._tg = displayio.TileGrid(
-            bitmap=graphics.window_bmp, pixel_shader=self._tg_palette,
-            width=width, height=height,
-            tile_width=graphics.WINDOW_TILE_SIZE, tile_height=graphics.WINDOW_TILE_SIZE, default_tile=14,
-        )
-        self.append(self._tg)
-
-        # set corners
-        self._tg[0, (2 if title else 0)] = (9 if title and not title_right else 0)
-        self._tg[self._tg.width-1, (2 if title else 0)] = (13 if title and title_right else 2)
-        self._tg[0, self._tg.height-1] = 6
-        self._tg[self._tg.width-1, self._tg.height-1] = 8
-
-        # set borders
-        for x in range(1, self._tg.width-1):
-            self._tg[x, (2 if title else 0)] = 1
-            self._tg[x, self._tg.height-1] = 7
-        for y in range(3 if title else 1, self._tg.height-1):
-            self._tg[0, y] = 3
-            self._tg[self._tg.width-1, y] = 5
-
-        # fill space
-        for x in range(1, self._tg.width-1):
-            for y in range(3 if title else 1, self._tg.height-1):
-                self._tg[x, y] = 4
-
-        # set title area
-        if title:
-            title_width = math.ceil(title_font.get_bounding_box()[0] * len(title) / graphics.WINDOW_TILE_SIZE)
-            self._tg[self._tg.width-title_width-2 if title_right else 0, 0] = 0
-            self._tg[self._tg.width-title_width-2 if title_right else 0, 1] = 3
-            self._tg[self._tg.width-1 if title_right else title_width+1, 0] = 2
-            self._tg[self._tg.width-1 if title_right else title_width+1, 1] = 5
-            self._tg[self._tg.width-title_width-2 if title_right else title_width+1, 2] = 12 if title_right else 11
-            for x in range(self._tg.width-title_width-1 if title_right else 1, self._tg.width-1 if title_right else title_width+1):
-                self._tg[x, 0] = 1
-                self._tg[x, 1] = 4
-                self._tg[x, 2] = 10
-
-        # setup textbox
-        self.append(TextBox(
-            font=font, text=text,
-            width=text_width, height=text_height,
-            x=graphics.WINDOW_TILE_SIZE, y=graphics.WINDOW_TILE_SIZE*(3 if title else 1)+4,
-        ))
-
-        # setup title label
-        if title:
-            label = Label(
-                font=title_font, text=title,
-                x=graphics.WINDOW_TILE_SIZE, y=graphics.WINDOW_TILE_SIZE+3,
-            )
-            if title_right:
-                label.anchored_position = (self.width-label.x, label.y)
-                label.anchor_point = (1, .5)
-            self.append(label)
-
-        # set position
-        self.x = (graphics.display.width - self.width) // 2
-        self.y = (graphics.display.height - self.height) - 16
-
-    @property
-    def width(self) -> int:
-        return self._tg.width * graphics.WINDOW_TILE_SIZE
-        
-    @property
-    def height(self) -> int:
-        return self._tg.height * graphics.WINDOW_TILE_SIZE
-    
-    def contains(self, touch_tuple:tuple) -> bool:
-        touch_tuple = (touch_tuple[0] - self.x, touch_tuple[1] - self.y, 0)
-        return self._tg.contains(touch_tuple)
-    
-    def hover(self, value:bool) -> None:
-        self._tg_palette[2] = graphics.COLOR_RED if value else self._tg_palette_default
-
 class VoiceDialog(Entity):
 
     def __init__(self, text:str, voice:int=1, on_complete:callable=None, **kwargs):
@@ -328,7 +215,7 @@ class VoiceDialog(Entity):
 
         super().__init__(parent=graphics.upper_group, on_complete=on_complete)
 
-        self._dialog = Dialog(text, **kwargs)
+        self._dialog = graphics.Dialog(text, **kwargs)
         self._group.append(self._dialog)
 
         # arrow indicator
@@ -386,7 +273,7 @@ class OptionDialog(Entity):
         self._dialogs = []
         for option in self._options:
             message = option if type(option) is str else option.get("message", "")
-            dialog = Dialog(message[0] if type(message) is list else message, line_width=DIALOG_LINE_WIDTH)
+            dialog = graphics.Dialog(message[0] if type(message) is list else message, force_width=True)
             self._dialogs.append(dialog)
             self._group.append(dialog)
         
@@ -479,48 +366,13 @@ class OptionDialog(Entity):
         del self._dialogs
         super().complete()
 
-class Heart(displayio.Group):
-
-    def __init__(self, size:int, color:int=graphics.COLOR_PINK, **kwargs):
-        super().__init__(**kwargs)
-
-        palette = displayio.Palette(1)
-        palette[0] = color
-
-        left_circle = vectorio.Circle(
-            pixel_shader=palette, radius=size//4,
-            x=-size//4, y=-size//4,
-        )
-        self.append(left_circle)
-
-        right_circle = vectorio.Circle(
-            pixel_shader=palette, radius=size//4,
-            x=size//4, y=-size//4,
-        )
-        self.append(right_circle)
-
-        angle = math.pi / 4
-        x = int(right_circle.x + right_circle.radius * math.cos(angle))
-        y = int(right_circle.y + right_circle.radius * math.sin(angle))
-
-        self.append(vectorio.Polygon(
-            pixel_shader=palette,
-            points=[
-                (size//2, -size//4),
-                (x, y),
-                (0, size//2),
-                (-x, y),
-                (-size//2, -size//4),
-            ],
-        ))
-
 class Results(Entity):
 
     def __init__(self):
         super().__init__(parent=graphics.upper_group)
 
         # background heart
-        self._group.append(Heart(
+        self._group.append(graphics.Heart(
             size=graphics.display.width//4,
             x=graphics.display.width//2,
             y=graphics.display.height//4,
@@ -601,7 +453,7 @@ class Title(Entity):
         super().__init__(parent=graphics.overlay_group)
 
         # background heart
-        self._group.append(Heart(
+        self._group.append(graphics.Heart(
             size=max(graphics.display.width, graphics.display.height)//2,
             x=graphics.display.width//2,
             y=graphics.display.height//2,
