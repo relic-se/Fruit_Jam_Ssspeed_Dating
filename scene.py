@@ -24,7 +24,30 @@ level_scores = [0 for x in LEVELS]
 
 class Scene:
 
+    def __init__(self):
+        pass
+
+    def start(self) -> None:
+        global current_scene
+        if current_scene is not None:
+            current_scene.stop()
+        current_scene = self
+
+    def stop(self) -> None:
+        global current_scene
+        if current_scene is self:
+            current_scene = None
+
+    def complete(self) -> None:
+        self.stop()
+
+    def _next_scene(self) -> None:
+        pass
+
+class DialogueScene(Scene):
+
     def __init__(self, name:str):
+        super().__init__()
         self._name = name
         
         # load data
@@ -53,20 +76,12 @@ class Scene:
         return self._name[0].upper() + self._name[1:]
 
     def start(self) -> None:
-        global current_scene
-        if current_scene is not None:
-            current_scene.stop()
-        current_scene = self
+        super().start()
         graphics.lower_group.append(self._snake_tg)
         engine.Sequence(
             engine.Animator(target=self._snake_tg, start=(SNAKE_X, SNAKE_Y), end=(SNAKE_X, SNAKE_Y-self._snake_bmp.height)),
             self._next_dialog
         ).play()
-
-    def stop(self) -> None:
-        global current_scene
-        if current_scene is self:
-            current_scene = None
 
     def _next_dialog(self) -> None:
         self._dialog_index += 1
@@ -83,16 +98,14 @@ class Scene:
             ).play()
         elif type(item) is list:
             engine.OptionDialog(item, on_complete=self._next_dialog).play()
-
-    def complete(self) -> None:
-        self.stop()
-
+    
     def _next_scene(self) -> None:
+        super()._next_scene()
         graphics.lower_group.remove(self._snake_tg)
         del self._snake_tg
         del self._data
 
-class Level(Scene):
+class Level(DialogueScene):
 
     def __init__(self, name:str=None):
         super().__init__(name if name is not None else LEVELS[0])
@@ -127,7 +140,7 @@ class Level(Scene):
         else:
             Epilogue().start()
 
-class Epilogue(Scene):
+class Epilogue(DialogueScene):
 
     def __init__(self):
         # determine the highest scoring level
@@ -141,11 +154,14 @@ class Epilogue(Scene):
     def complete(self) -> None:
         if not self._results:
             self._results = True
-            engine.Results().play()
+            engine.Sequence(
+                engine.Results(),
+                self.complete
+            ).play()
         else:
             super().complete()
             engine.Sequence(
-                engine.Fade(reverse=True).play(),
+                engine.Fade(reverse=True),
                 self._next_scene
             ).play()
 
@@ -159,3 +175,27 @@ class Epilogue(Scene):
             level_scores[i] = 0
 
         # TODO: return to title
+        Title().start()
+
+class Title(Scene):
+
+    def __init__(self):
+        super().__init__()
+
+    def start(self) -> None:
+        super().start()
+        engine.Sequence(
+            engine.Title(),
+            self.complete
+        ).play()
+
+    def complete(self) -> None:
+        super().complete()
+        engine.Sequence(
+            engine.Fade(),
+            self._next_scene
+        ).play()
+
+    def _next_scene(self) -> None:
+        super()._next_scene()
+        Level().start()

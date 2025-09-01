@@ -5,11 +5,13 @@ import displayio
 import fontio
 import math
 import random
+import supervisor
 from terminalio import FONT
 import vectorio
 
 from adafruit_display_text.label import Label
 from adafruit_display_text.text_box import TextBox
+import adafruit_imageload
 from font_knewave_webfont_24 import FONT as FONT_TITLE
 
 import config
@@ -121,6 +123,9 @@ class Entity(Event):
             self._parent.remove(self._group)
         del self._group
         super().complete()
+
+    def select(self) -> None:
+        pass
 
 class Fade(Entity):
 
@@ -305,7 +310,7 @@ class Dialog(displayio.Group):
         return self._tg.contains(touch_tuple)
     
     def hover(self, value:bool) -> None:
-        self._tg_palette[2] = 0xff0000 if value else self._tg_palette_default
+        self._tg_palette[2] = graphics.COLOR_RED if value else self._tg_palette_default
 
 class VoiceDialog(Entity):
 
@@ -357,6 +362,10 @@ class VoiceDialog(Entity):
             self._next_voice()
         # TODO: Handle mouse hover?
     
+    def select(self) -> None:
+        super().select()
+        self.complete()
+
     def complete(self) -> None:
         self._group.remove(self._dialog)
         del self._dialog
@@ -380,7 +389,6 @@ class OptionDialog(Entity):
             dialog = Dialog(message[0] if type(message) is list else message, line_width=DIALOG_LINE_WIDTH)
             self._dialogs.append(dialog)
             self._group.append(dialog)
-        self._selected = -1
         
         y = graphics.display.height - 8
         for dialog in reversed(self._dialogs):
@@ -400,11 +408,11 @@ class OptionDialog(Entity):
             for dialog in self._dialogs:
                 dialog.hover(dialog.contains(cursor_pos))
 
-    def select(self, index: int = None) -> None:
-        if self._selected >= 0:
-            return
-        
-        if index is None and graphics.cursor:
+    def select(self) -> None:
+        super().select()
+
+        index = None
+        if graphics.cursor:
             cursor_pos = graphics.get_cursor_pos()
             for dialog_index, dialog in enumerate(self._dialogs):
                 if dialog.contains(cursor_pos):
@@ -413,13 +421,13 @@ class OptionDialog(Entity):
         if index is None:
             return
         
-        self._selected = min(max(index, 0), len(self._options))
+        selected = min(max(index, 0), len(self._options))
 
         # hide dialog options
         for dialog in self._dialogs:
             self._group.remove(dialog)
 
-        option = self._options[self._selected]
+        option = self._options[selected]
         if type(option) is dict:
 
             if scene.current_scene is not None:
@@ -473,7 +481,7 @@ class OptionDialog(Entity):
 
 class Heart(displayio.Group):
 
-    def __init__(self, size:int, color:int=0xffb6de, **kwargs):
+    def __init__(self, size:int, color:int=graphics.COLOR_PINK, **kwargs):
         super().__init__(**kwargs)
 
         palette = displayio.Palette(1)
@@ -575,3 +583,83 @@ class Results(Entity):
             anchor_point=(1, 0),
             anchored_position=(graphics.display.width-8, graphics.display.height//2+graphics.WINDOW_TILE_SIZE),
         ))
+
+    def select(self) -> None:
+        super().select()
+        self.complete()
+
+def label_contains(label:Label, touch_tuple:tuple) -> bool:
+    x, y, w, h = label.bounding_box
+    x += label.x
+    y += label.y
+    tx, ty, _t = touch_tuple
+    return 0 <= tx - x <= w and 0 <= ty - y <= h
+
+class Title(Entity):
+
+    def __init__(self):
+        super().__init__(parent=graphics.overlay_group)
+
+        # background heart
+        self._group.append(Heart(
+            size=max(graphics.display.width, graphics.display.height)//2,
+            x=graphics.display.width//2,
+            y=graphics.display.height//2,
+        ))
+
+        # snake silhouette
+        bitmap, palette = adafruit_imageload.load("bitmaps/title.bmp")
+        palette.make_transparent(1)
+        self._group.append(displayio.TileGrid(
+            bitmap=bitmap, pixel_shader=palette,
+            x=(graphics.display.width-bitmap.width)//2,
+            y=(graphics.display.height-bitmap.height)//2,
+        ))
+
+        # title text
+        self._group.append(Label(
+            font=FONT_TITLE, text="Ssspeed Dating",
+            anchor_point=(.5, .5),
+            anchored_position=(graphics.display.width//2, graphics.display.height//2),
+        ))
+
+        self._start_label = Label(
+            font=FONT_TITLE, text="Play", color=graphics.COLOR_PINK,
+            anchor_point=(.5, .5),
+            anchored_position=(graphics.display.width//4, graphics.display.height*3//4),
+        )
+        self._group.append(self._start_label)
+
+        self._quit_label = Label(
+            font=FONT_TITLE, text="Quit", color=graphics.COLOR_PINK,
+            anchor_point=(.5, .5),
+            anchored_position=(graphics.display.width*3//4, graphics.display.height*3//4),
+        )
+        self._group.append(self._quit_label)
+
+    def update(self) -> None:
+        super().update()
+        if graphics.cursor:
+            cursor_pos = graphics.get_cursor_pos()
+            for label in (self._start_label, self._quit_label):
+                contains = label_contains(label, cursor_pos)
+                if label.color == graphics.COLOR_PINK and contains:
+                    label.color = graphics.COLOR_WHITE
+                elif label.color == graphics.COLOR_WHITE and not contains:
+                    label.color = graphics.COLOR_PINK
+
+    def select(self) -> None:
+        super().select()
+        if graphics.cursor:
+            cursor_pos = graphics.get_cursor_pos()
+            if label_contains(self._start_label, cursor_pos):
+                self.complete()
+            elif label_contains(self._quit_label, cursor_pos):
+                supervisor.reload()
+    
+    def complete(self) -> None:
+        self._group.remove(self._start_label)
+        del self._start_label
+        self._group.remove(self._quit_label)
+        del self._quit_label
+        super().complete()

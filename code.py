@@ -41,23 +41,8 @@ table_tg = displayio.TileGrid(table_bmp, pixel_shader=table_palette,
                               y=graphics.display.height-table_bmp.height)  # move to bottom of display
 graphics.upper_group.append(table_tg)
 
-# title text
-title_label = Label(FONT_TITLE, text="Ssspeed Dating", color=0xffffff,)
-title_label.anchor_point = (.5, .5)
-title_label.anchored_position = (graphics.display.width//2, graphics.display.height//2)
-graphics.overlay_group.append(title_label)
-
-started = False
-def start() -> None:
-    # Hide title and start level
-    global started
-    if not started:
-        started = True
-        title_label.hidden = True
-        engine.Sequence(
-            engine.Fade(),
-            lambda: scene.Level().start()
-        ).play()
+# start title screen
+scene.Title().start()
 
 ACTION_SELECT = const(0)
 ACTION_UP     = const(1)
@@ -69,14 +54,8 @@ def do_action(action:int) -> None:
     global started
     if action == ACTION_SELECT:
         sound.play_sfx(sound.SFX_CLICK)
-        if not started:
-            start()
-        elif isinstance(engine.current_event, engine.VoiceDialog):
-            engine.current_event.complete()
-        elif isinstance(engine.current_event, engine.OptionDialog):
+        if engine.current_event is not None and isinstance(engine.current_event, engine.Entity):
             engine.current_event.select()
-        elif isinstance(engine.current_event, engine.Results):
-            engine.current_event.complete()
     elif action == ACTION_QUIT:
         supervisor.reload()
 

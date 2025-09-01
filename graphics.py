@@ -12,6 +12,10 @@ import config
 
 displayio.release_displays()
 
+COLOR_WHITE = 0xffffff
+COLOR_PINK  = 0xffb6de
+COLOR_RED   = 0xff0000
+
 def copy_palette(palette:displayio.Palette) -> displayio.Palette:
     clone = displayio.Palette(len(palette))
     for i, color in enumerate(palette):
