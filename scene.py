@@ -16,6 +16,8 @@ LEVELS = (
     "ozzie",
     "max",
     "ellis",
+    "wren",
+    "charlie",
 )
 
 current_scene = None
