@@ -126,12 +126,11 @@ class Entity(Event):
 
 class Fade(Entity):
 
-    def __init__(self, duration:float=1, reverse:bool=False, **kwargs):
+    def __init__(self, speed:int=2, reverse:bool=False, **kwargs):
         super().__init__(parent=graphics.overlay_group, **kwargs)
-        self._speed = config.TARGET_FRAME_RATE // duration
+        self._speed = speed
         self._reverse = reverse
         self._index = 0
-        self._counter = 0
         self._tg = displayio.TileGrid(
             bitmap=graphics.fade_bmp, pixel_shader=graphics.fade_palette,
             width=graphics.display.width//graphics.FADE_TILE_SIZE, height=graphics.display.height//graphics.FADE_TILE_SIZE,
@@ -148,13 +147,11 @@ class Fade(Entity):
     def update(self) -> None:
         super().update()
         if self._active:
-            self._counter += 1
-            if self._counter > self._speed:
-                self._index += 1
-                if self._index < graphics.FADE_TILES:
-                    self._update_tile()
-                else:
-                    self.complete()
+            self._index += self._speed
+            if self._index < graphics.FADE_TILES:
+                self._update_tile()
+            else:
+                self.complete()
 
     def _update_tile(self) -> None:
         index = self._index if not self._reverse else graphics.FADE_TILES-self._index-1
