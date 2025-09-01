@@ -2,9 +2,14 @@
 #
 # SPDX-License-Identifier: GPLv3
 import audiocore
+import os
 import random
 
+import adafruit_pathlib as pathlib
+
 import hardware
+
+VOICE = None
 
 if hardware.tlv320_present:
 
@@ -16,29 +21,37 @@ if hardware.tlv320_present:
     # play wave file
     hardware.mixer.play(MUSIC, voice=0, loop=True)
 
-    VOICE = tuple([
-        tuple([
-            audiocore.WaveFile("sounds/voice{:d}_{:d}.wav".format(i+1, j))
-            for j in range(6)
-        ]) for i in range(2)
-    ])
-
 else:
     MUSIC = None
     SFX_CLICK = None
     SFX_BUZZER = None
-    VOICE = tuple([(None,) for i in range(2)])
 
 def play_sfx(wave:audiocore.WaveFile) -> None:
     if hardware.tlv320_present and wave is not None:
         hardware.mixer.play(wave, voice=1, loop=False)
 
-def play_voice(voice:int=1) -> None:
-    if hardware.tlv320_present and voice > 0:
-        voice = (voice-1) % len(VOICE)
-        wave = VOICE[voice][random.randint(0, len(VOICE[voice])-1)]
+def play_voice() -> None:
+    if hardware.tlv320_present and VOICE is not None:
+        wave = VOICE[random.randint(0, len(VOICE)-1)]
         if wave is not None:
             hardware.mixer.play(wave, voice=2, loop=False)
+
+def load_voice(name:str) -> None:
+    global VOICE
+    if VOICE is not None:
+        hardware.mixer.voice[2].stop()
+        del VOICE
+        VOICE = None
+
+    path = pathlib.Path("sounds/{:s}".format(name))
+    if path.exists():
+        VOICE = []
+        for filename in os.listdir(path.absolute()):
+            if filename.endswith(".wav"):
+                VOICE.append(audiocore.WaveFile((path / filename).absolute()))
+        if not len(VOICE):
+            del VOICE
+            VOICE = None
 
 def is_voice_playing() -> bool:
     if hardware.tlv320_present:

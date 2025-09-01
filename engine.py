@@ -198,7 +198,7 @@ class Animator(Event):
 
 class VoiceDialog(Entity):
 
-    def __init__(self, text:str, voice:int=1, on_complete:callable=None, **kwargs):
+    def __init__(self, text:str, voice:bool=True, on_complete:callable=None, **kwargs):
         command = None
         if text.startswith("_"):
             command = "_"
@@ -206,7 +206,7 @@ class VoiceDialog(Entity):
             command = "[buzzer]"
             sound.play_sfx(sound.SFX_BUZZER)
         if command is not None:
-            voice = 0
+            voice = False
             text = text[len(command):].lstrip()
             kwargs["title"] = ""
 
@@ -229,16 +229,17 @@ class VoiceDialog(Entity):
         self._voice = voice
         self._voice_len = len(text) // 10
         self._voice_index = -1
-        self._next_voice()
+        if voice:
+            self._next_voice()
 
     def _next_voice(self) -> None:
         if self.voice_playing:
             self._voice_index += 1
-            sound.play_voice(self._voice)
+            sound.play_voice()
 
     @property
     def voice_playing(self) -> bool:
-        return self._voice_index < self._voice_len
+        return self._voice and self._voice_index < self._voice_len
 
     def update(self) -> None:
         super().update()
@@ -342,7 +343,7 @@ class OptionDialog(Entity):
         else:
             VoiceDialog(
                 self._extra[self._extra_index],
-                title="You", voice=0,
+                title="You", voice=False,
                 on_complete=self._next_extra_dialog,
             ).play()
 
@@ -355,7 +356,7 @@ class OptionDialog(Entity):
                 self._response[self._response_index],
                 title=(scene.current_scene.title if scene.current_scene is not None else ""),
                 title_right=True,
-                voice=(scene.current_scene.voice if scene.current_scene is not None else 0),
+                voice=True,
                 on_complete=self._next_response_dialog,
             ).play()
     

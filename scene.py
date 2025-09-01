@@ -8,6 +8,7 @@ import adafruit_imageload
 
 import engine
 import graphics
+import sound
 
 SNAKE_X = 124
 SNAKE_Y = 211
@@ -62,17 +63,15 @@ class DialogueScene(Scene):
         snake_palette.make_transparent(self._data["bitmap_transparent"])
         self._snake_tg = displayio.TileGrid(self._snake_bmp, pixel_shader=snake_palette)
 
-        self._dialog_index = -1
-        self._dialog_voice = self._data.get("voice", 1)
+        # load voice
+        sound.load_voice(self._name)
 
+        # configure dialogue
+        self._dialog_index = -1
         self._dialogue = self._get_dialogue()
 
     def _get_dialogue(self) -> list:
         raise NotImplementedError()
-
-    @property
-    def voice(self) -> int:
-        return self._dialog_voice
     
     @property
     def title(self) -> str:
@@ -97,7 +96,7 @@ class DialogueScene(Scene):
         if type(item) is str:
             engine.VoiceDialog(
                 item, title=self.title, title_right=True,
-                voice=self._dialog_voice, on_complete=self._next_dialog
+                voice=True, on_complete=self._next_dialog
             ).play()
         elif type(item) is list:
             engine.OptionDialog(item, on_complete=self._next_dialog).play()
