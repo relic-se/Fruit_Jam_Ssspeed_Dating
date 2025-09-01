@@ -2,8 +2,14 @@
 #
 # SPDX-License-Identifier: GPLv3
 import displayio
+import fontio
+import math
 import supervisor
+from terminalio import FONT
+import vectorio
 
+from adafruit_display_text.label import Label
+from adafruit_display_text.text_box import TextBox
 from adafruit_fruitjam.peripherals import request_display_config
 import adafruit_imageload
 import asyncio
@@ -11,6 +17,10 @@ import asyncio
 import config
 
 displayio.release_displays()
+
+COLOR_WHITE = 0xffffff
+COLOR_PINK  = 0xffb6de
+COLOR_RED   = 0xff0000
 
 def copy_palette(palette:displayio.Palette) -> displayio.Palette:
     clone = displayio.Palette(len(palette))
@@ -81,3 +91,148 @@ def reset_cursor():
 
 def get_cursor_pos() -> tuple:
     return (cursor.x, cursor.y, 0)
+
+DIALOG_LINE_WIDTH = ((display.width // WINDOW_TILE_SIZE) - 10) * WINDOW_TILE_SIZE
+
+class Dialog(displayio.Group):
+
+    def __init__(self, text:str, title:str="", title_right:bool=False, force_width:bool=False, font:fontio.FontProtocol=FONT, title_font:fontio.FontProtocol=FONT, **kwargs):
+        super().__init__(**kwargs)
+
+        try:
+            bb_width, bb_height, bb_x_offset, bb_y_offset = font.get_bounding_box()
+        except ValueError:
+            bb_width, bb_height = font.get_bounding_box()
+            bb_x_offset, bb_y_offset = 0, 0
+
+        words = text.split(" ")
+        desired_line_width = DIALOG_LINE_WIDTH // bb_width
+        lines = []
+        line = ""
+        for word in words:
+            if len(line) + len(word) + 1 > desired_line_width:
+                lines.append(line.rstrip())
+                line = ""
+            line += word + " "
+        if len(line):
+            lines.append(line.rstrip())
+
+        text_width = DIALOG_LINE_WIDTH if force_width else max([len(x)+1 for x in lines]) * bb_width
+        text_height = len(lines) * (bb_height + 4) - 4
+
+        width = max(math.ceil(text_width / WINDOW_TILE_SIZE) + 2, 3)
+        height = max(math.ceil(text_height / WINDOW_TILE_SIZE) + 2, 3) + (2 if title else 0)
+        
+        # setup window background grid
+        self._tg_palette = copy_palette(window_palette)
+        self._tg_palette_default = self._tg_palette[2]
+        self._tg = displayio.TileGrid(
+            bitmap=window_bmp, pixel_shader=self._tg_palette,
+            width=width, height=height,
+            tile_width=WINDOW_TILE_SIZE, tile_height=WINDOW_TILE_SIZE, default_tile=14,
+        )
+        self.append(self._tg)
+
+        # set corners
+        self._tg[0, (2 if title else 0)] = (9 if title and not title_right else 0)
+        self._tg[self._tg.width-1, (2 if title else 0)] = (13 if title and title_right else 2)
+        self._tg[0, self._tg.height-1] = 6
+        self._tg[self._tg.width-1, self._tg.height-1] = 8
+
+        # set borders
+        for x in range(1, self._tg.width-1):
+            self._tg[x, (2 if title else 0)] = 1
+            self._tg[x, self._tg.height-1] = 7
+        for y in range(3 if title else 1, self._tg.height-1):
+            self._tg[0, y] = 3
+            self._tg[self._tg.width-1, y] = 5
+
+        # fill space
+        for x in range(1, self._tg.width-1):
+            for y in range(3 if title else 1, self._tg.height-1):
+                self._tg[x, y] = 4
+
+        # set title area
+        if title:
+            title_width = math.ceil(title_font.get_bounding_box()[0] * len(title) / WINDOW_TILE_SIZE)
+            self._tg[self._tg.width-title_width-2 if title_right else 0, 0] = 0
+            self._tg[self._tg.width-title_width-2 if title_right else 0, 1] = 3
+            self._tg[self._tg.width-1 if title_right else title_width+1, 0] = 2
+            self._tg[self._tg.width-1 if title_right else title_width+1, 1] = 5
+            self._tg[self._tg.width-title_width-2 if title_right else title_width+1, 2] = 12 if title_right else 11
+            for x in range(self._tg.width-title_width-1 if title_right else 1, self._tg.width-1 if title_right else title_width+1):
+                self._tg[x, 0] = 1
+                self._tg[x, 1] = 4
+                self._tg[x, 2] = 10
+
+        # setup textbox
+        self.append(TextBox(
+            font=font, text=text,
+            width=text_width, height=text_height,
+            x=WINDOW_TILE_SIZE, y=WINDOW_TILE_SIZE*(3 if title else 1)+4,
+        ))
+
+        # setup title label
+        if title:
+            label = Label(
+                font=title_font, text=title,
+                x=WINDOW_TILE_SIZE, y=WINDOW_TILE_SIZE+3,
+            )
+            if title_right:
+                label.anchored_position = (self.width-label.x, label.y)
+                label.anchor_point = (1, .5)
+            self.append(label)
+
+        # set position
+        self.x = (display.width - self.width) // 2
+        self.y = (display.height - self.height) - 16
+
+    @property
+    def width(self) -> int:
+        return self._tg.width * WINDOW_TILE_SIZE
+        
+    @property
+    def height(self) -> int:
+        return self._tg.height * WINDOW_TILE_SIZE
+    
+    def contains(self, touch_tuple:tuple) -> bool:
+        touch_tuple = (touch_tuple[0] - self.x, touch_tuple[1] - self.y, 0)
+        return self._tg.contains(touch_tuple)
+    
+    def hover(self, value:bool) -> None:
+        self._tg_palette[2] = COLOR_RED if value else self._tg_palette_default
+
+class Heart(displayio.Group):
+
+    def __init__(self, size:int, color:int=COLOR_PINK, **kwargs):
+        super().__init__(**kwargs)
+
+        palette = displayio.Palette(1)
+        palette[0] = color
+
+        left_circle = vectorio.Circle(
+            pixel_shader=palette, radius=size//4,
+            x=-size//4, y=-size//4,
+        )
+        self.append(left_circle)
+
+        right_circle = vectorio.Circle(
+            pixel_shader=palette, radius=size//4,
+            x=size//4, y=-size//4,
+        )
+        self.append(right_circle)
+
+        angle = math.pi / 4
+        x = int(right_circle.x + right_circle.radius * math.cos(angle))
+        y = int(right_circle.y + right_circle.radius * math.sin(angle))
+
+        self.append(vectorio.Polygon(
+            pixel_shader=palette,
+            points=[
+                (size//2, -size//4),
+                (x, y),
+                (0, size//2),
+                (-x, y),
+                (-size//2, -size//4),
+            ],
+        ))
