@@ -21,6 +21,9 @@ displayio.release_displays()
 COLOR_WHITE = 0xffffff
 COLOR_PINK  = 0xffb6de
 COLOR_RED   = 0xff0000
+COLOR_BLACK = 0x000000
+
+ROW_GAP     = 4
 
 def copy_palette(palette:displayio.Palette) -> displayio.Palette:
     clone = displayio.Palette(len(palette))
@@ -99,11 +102,7 @@ class Dialog(displayio.Group):
     def __init__(self, text:str, title:str="", title_right:bool=False, force_width:bool=False, font:fontio.FontProtocol=FONT, title_font:fontio.FontProtocol=FONT, **kwargs):
         super().__init__(**kwargs)
 
-        try:
-            bb_width, bb_height, bb_x_offset, bb_y_offset = font.get_bounding_box()
-        except ValueError:
-            bb_width, bb_height = font.get_bounding_box()
-            bb_x_offset, bb_y_offset = 0, 0
+        bb_width, bb_height = font.get_bounding_box()[0:2]
 
         words = text.split(" ")
         desired_line_width = DIALOG_LINE_WIDTH // bb_width
@@ -118,7 +117,7 @@ class Dialog(displayio.Group):
             lines.append(line.rstrip())
 
         text_width = DIALOG_LINE_WIDTH if force_width else max([len(x)+1 for x in lines]) * bb_width
-        text_height = len(lines) * (bb_height + 4) - 4
+        text_height = len(lines) * (bb_height + ROW_GAP) - ROW_GAP
 
         width = max(math.ceil(text_width / WINDOW_TILE_SIZE) + 2, 3)
         height = max(math.ceil(text_height / WINDOW_TILE_SIZE) + 2, 3) + (2 if title else 0)
@@ -236,3 +235,59 @@ class Heart(displayio.Group):
                 (-size//2, -size//4),
             ],
         ))
+
+class Key(displayio.Group):
+
+    def __init__(self, text:str="", font:fontio.FontProtocol=FONT, size:int=16, border:int=1, color:int=COLOR_PINK, color_hover:int=COLOR_WHITE, background_color:int=COLOR_BLACK, **kwargs):
+        super().__init__(**kwargs)
+        
+        self._color = color
+        self._color_hover = color_hover
+
+        self._outline_palette = displayio.Palette(1)
+        self._outline_palette[0] = color
+        
+        self._outline = vectorio.Rectangle(
+            pixel_shader=self._outline_palette,
+            width=size, height=size,
+        )
+        self.append(self._outline)
+
+        self._background_palette = displayio.Palette(1)
+        self._background_palette[0] = background_color
+
+        self._background = vectorio.Rectangle(
+            pixel_shader=self._background_palette,
+            width=size-border*2, height=size-border*2,
+            x=border, y=border,
+        )
+        self.append(self._background)
+
+        self._label = Label(
+            text=text, font=font, color=color,
+            anchor_point=(.5, .5),
+            anchored_position=(size//2, size//2),
+        )
+        self.append(self._label)
+    
+    def contains(self, touch_tuple:tuple) -> bool:
+        tx, ty = touch_tuple[0] - self.x, touch_tuple[1] - self.y
+        return 0 <= tx <= self._outline.width and 0 <= ty <= self._outline.height
+    
+    @property
+    def hover(self) -> bool:
+        return self._outline_palette == self._color_hover
+    
+    @hover.setter
+    def hover(self, value:bool) -> None:
+        color = self._color_hover if value else self._color
+        self._outline_palette[0] = color
+        self._label.color = color
+
+    @property
+    def text(self) -> str:
+        return self._label.text
+    
+    @text.setter
+    def text(self, value:str) -> None:
+        self._label.text = value

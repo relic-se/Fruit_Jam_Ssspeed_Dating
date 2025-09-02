@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: GPLv3
 import displayio
+import fontio
 import random
 import supervisor
 from terminalio import FONT
@@ -512,4 +513,119 @@ class Title(Entity):
         del self._start_label
         self._group.remove(self._quit_label)
         del self._quit_label
+        super().complete()
+
+KEYBOARD_CHARS = (
+    ("q", "w", "e", "r", "t", "y", "u", "i", "o", "p"),
+    ("a", "s", "d", "f", "g", "h", "j", "k", "l"),
+    ("z", "x", "c", "v", "b", "n", "m"),
+)
+
+class Keyboard(Entity):
+
+    def __init__(self, font:fontio.FontProtocol=FONT_TITLE, size:int=16, gap:int=2, margin:int=4):
+        super().__init__(parent=graphics.overlay_group)
+
+        keys_height = len(KEYBOARD_CHARS) * (size + gap) - gap
+        bb_height = font.get_bounding_box()[1]
+        height = keys_height + margin + bb_height
+
+        # setup graph background grid
+        tg = displayio.TileGrid(
+            bitmap=graphics.window_bmp, pixel_shader=graphics.window_palette,
+            width=graphics.display.width//graphics.WINDOW_TILE_SIZE,
+            height=height//graphics.WINDOW_TILE_SIZE+2,
+            tile_width=graphics.WINDOW_TILE_SIZE, tile_height=graphics.WINDOW_TILE_SIZE, default_tile=4,
+        )
+        tg.y = graphics.display.height - tg.height * graphics.WINDOW_TILE_SIZE
+        for x in range(0, tg.width):
+            tg[x, 0] = 1 # top border
+        self._group.append(tg)
+
+        self._keys = displayio.Group()
+        self._group.append(self._keys)
+
+        for y, row in enumerate(KEYBOARD_CHARS):
+            row_width = (len(row) - 1) * (size + gap) - gap
+            for x, char in enumerate(row):
+                self._keys.append(graphics.Key(
+                    text=char, size=size,
+                    x=(graphics.display.width - row_width)//2 + x*(size + gap),
+                    y=graphics.display.height - graphics.WINDOW_TILE_SIZE - keys_height + y*(size + gap),
+                ))
+
+        self._text = Label(
+            font=FONT_TITLE, text="",
+            anchor_point=(.5, .5),
+            anchored_position=(
+                graphics.display.width//2,
+                graphics.display.height - graphics.WINDOW_TILE_SIZE - keys_height - margin - bb_height//2
+            )
+        )
+        self._group.append(self._text)
+
+        mid_row_width = (len(KEYBOARD_CHARS[1]) - 1) * (size + gap) - gap
+
+        self._upper = graphics.Key(
+            text="^", size=size,
+            x=(graphics.display.width - mid_row_width)//2 - gap - size,
+            y=graphics.display.height - graphics.WINDOW_TILE_SIZE - size*2 - gap,
+        )
+        self._group.append(self._upper)
+
+        self._back = graphics.Key(
+            text="<", size=size,
+            x=(graphics.display.width + mid_row_width)//2 + gap,
+            y=graphics.display.height - graphics.WINDOW_TILE_SIZE - size*2 - gap,
+        )
+        self._group.append(self._back)
+
+        self._enter = graphics.Key(
+            text=">", size=size,
+            x=graphics.display.width - graphics.WINDOW_TILE_SIZE - size,
+            y=graphics.display.height - graphics.WINDOW_TILE_SIZE - size,
+        )
+        self._group.append(self._enter)
+
+    def update(self) -> None:
+        super().update()
+        if graphics.cursor:
+            cursor_pos = graphics.get_cursor_pos()
+            for key in self._keys:
+                key.hover = key.contains(cursor_pos)
+            for key in (self._upper, self._back, self._enter):
+                key.hover = key.contains(cursor_pos)
+
+    def select(self) -> None:
+        super().select()
+        if graphics.cursor:
+            cursor_pos = graphics.get_cursor_pos()
+            for key in self._keys:
+                if key.contains(cursor_pos):
+                    self._text.text += key.text
+                    break
+            
+            if self._upper.contains(cursor_pos):
+                isupper = ord(self._keys[0].text) < ord("a")
+                for key in self._keys:
+                    if isupper:
+                        key.text = key.text.lower()
+                    else:
+                        key.text = key.text.upper()
+
+            text = self._text.text
+            if self._back.contains(cursor_pos) and len(text) > 1:
+                self._text.text = text[:len(text)-2]
+
+            if self._enter.contains(cursor_pos):
+                self.complete()
+    
+    def complete(self) -> None:
+        self._group.remove(self._keys)
+        del self._keys
+        for key in (self._upper, self._back, self._enter):
+            self._group.remove(key)
+            del key
+        self._group.remove(self._text)
+        del self._text
         super().complete()

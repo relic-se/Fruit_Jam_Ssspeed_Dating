@@ -9,40 +9,14 @@ import adafruit_usb_host_mouse
 
 import engine
 import graphics
-
-options = [
-    {
-        "message": "I love meeting new sssnakesss. It can be a wonderful challenge. I go to thessse thingsss all the time.",
-        "score": 10,
-        "response": [
-            "I admire your sssocial gumption and posssitivity.",
-            "Have you ever found a date at anyone one of thessse thingsss?"
-        ]
-    },
-    {
-        "message": "You're not here to find true love? I'm trying again.",
-        "score": 2,
-        "response": [
-            "I don't really believe in true love or sssoulmatesss.",
-            "Have you found a date at one of thessse thingsss?"
-        ]
-    },
-    {
-        "message": "Well, obviousssly I'm here to find a date. If thisss time goesss well.",
-        "score": -5,
-        "response": [
-            "That makesss sssenssse.",
-            "Ssso have you ever even found a date at one of thessse thingsss?"
-        ]
-    }
-]
+import sound
 
 # add background image
 bg_bmp, bg_palette = adafruit_imageload.load("bitmaps/bg.bmp")
 bg_tg = displayio.TileGrid(bg_bmp, pixel_shader=bg_palette)
 graphics.lower_group.append(bg_tg)
 
-engine.OptionDialog(options).play()
+engine.Keyboard().play()
 
 graphics.main_group.hidden = False
 
@@ -51,17 +25,18 @@ async def mouse_task() -> None:
         if (mouse := adafruit_usb_host_mouse.find_and_init_boot_mouse("bitmaps/cursor.bmp")) is not None:
             graphics.set_cursor(mouse.tilegrid)
             timeouts = 0
+            previous_pressed_btns = []
             while timeouts < 9999:
                 pressed_btns = mouse.update()
                 if pressed_btns is None:
                     timeouts += 1
                 else:
                     timeouts = 0
-                    if "left" in pressed_btns:
-                        if isinstance(engine.current_event, engine.OptionDialog):
+                    if "left" in pressed_btns and (previous_pressed_btns is None or "left" not in previous_pressed_btns):
+                        sound.play_sfx(sound.SFX_CLICK)
+                        if engine.current_event is not None and isinstance(engine.current_event, engine.Entity):
                             engine.current_event.select()
-                        elif isinstance(engine.current_event, engine.VoiceDialog):
-                            engine.current_event.complete()
+                previous_pressed_btns = pressed_btns
                 await asyncio.sleep(1/30)
             graphics.reset_cursor()
         await asyncio.sleep(1)
