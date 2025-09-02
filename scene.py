@@ -4,6 +4,7 @@
 import displayio
 import json
 import os
+import re
 
 import adafruit_imageload
 
@@ -14,7 +15,8 @@ import sound
 SNAKE_X = 124
 SNAKE_Y = 211
 
-LEVELS = tuple([filename for filename in os.listdir("content") if filename.endswith(".json")])
+level_regex = re.compile("^\d\d-[\w-]+\.json$")
+LEVELS = tuple([filename for filename in os.listdir("content") if level_regex.match(filename)])
 
 current_scene = None
 level_index = 0
