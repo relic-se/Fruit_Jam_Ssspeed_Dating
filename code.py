@@ -64,15 +64,17 @@ async def mouse_task() -> None:
         if (mouse := adafruit_usb_host_mouse.find_and_init_boot_mouse("bitmaps/cursor.bmp")) is not None:
             graphics.set_cursor(mouse.tilegrid)
             timeouts = 0
+            previous_pressed_btns = []
             while timeouts < 9999:
                 pressed_btns = mouse.update()
                 if pressed_btns is None:
                     timeouts += 1
                 else:
                     timeouts = 0
-                    if "left" in pressed_btns:
+                    if "left" in pressed_btns and (previous_pressed_btns is None or "left" not in previous_pressed_btns):
                         # TODO: define selected based on position
                         do_action(ACTION_SELECT)
+                    previous_pressed_btns = pressed_btns
                 await asyncio.sleep(1/config.TARGET_FRAME_RATE)
             graphics.reset_cursor()
         await asyncio.sleep(1)
