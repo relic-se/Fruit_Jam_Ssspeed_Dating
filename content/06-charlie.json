@@ -1,5 +1,8 @@
 {
+    "name": "Charlie",
+    "bitmap": "charlie",
     "bitmap_transparent": 3,
+    "voice": "charlie",
     "dialogue": [
         "Hi, I'm Charlie.",
         "What bringsss you here tonight?",

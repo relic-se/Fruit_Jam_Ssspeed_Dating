@@ -1,7 +1,10 @@
 {
-    "bitmap_transparent": 2,
+    "name": "Max",
+    "bitmap": "max",
+    "bitmap_transparent": 6,
+    "voice": "max",
     "dialogue": [
-        "Hi, I'm Wren.",
+        "Hi, I'm Max.",
         "What bringsss you here tonight?",
         [
             {
@@ -31,7 +34,7 @@
         ]
     ],
     "epilogue": [
-        "It was nice talking to you",
-        "Let's meet up again"
+        "You da besss",
+        "Wanna hang out?"
     ]
 }

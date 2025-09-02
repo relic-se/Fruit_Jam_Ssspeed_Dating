@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: GPLv3
 import displayio
 import json
+import os
 
 import adafruit_imageload
 
@@ -13,18 +14,11 @@ import sound
 SNAKE_X = 124
 SNAKE_Y = 211
 
-LEVELS = (
-    "ozzie",
-    "max",
-    "ellis",
-    "wren",
-    "charlie",
-    "gale",
-)
+LEVELS = tuple([filename for filename in os.listdir("content") if filename.endswith(".json")])
 
 current_scene = None
 level_index = 0
-level_scores = [0 for x in LEVELS]
+level_scores = [0] * len(LEVELS)
 
 class Scene:
 
@@ -50,21 +44,20 @@ class Scene:
 
 class DialogueScene(Scene):
 
-    def __init__(self, name:str):
+    def __init__(self, filename:str):
         super().__init__()
-        self._name = name
-        
+
         # load data
-        with open("content/{:s}.json".format(self._name), "r") as f:
+        with open("content/{:s}".format(filename), "r") as f:
             self._data = json.load(f)
 
         # load snake bitmap
-        self._snake_bmp, snake_palette = adafruit_imageload.load("bitmaps/{:s}.bmp".format(self._name))
+        self._snake_bmp, snake_palette = adafruit_imageload.load("bitmaps/{:s}.bmp".format(self._data["bitmap"]))
         snake_palette.make_transparent(self._data["bitmap_transparent"])
         self._snake_tg = displayio.TileGrid(self._snake_bmp, pixel_shader=snake_palette)
 
         # load voice
-        sound.load_voice(self._name)
+        sound.load_voice(self._data.get("voice", ""))
 
         # configure dialogue
         self._dialog_index = -1
@@ -74,8 +67,8 @@ class DialogueScene(Scene):
         raise NotImplementedError()
     
     @property
-    def title(self) -> str:
-        return self._name[0].upper() + self._name[1:]
+    def name(self) -> str:
+        return self._data["name"]
 
     def start(self) -> None:
         super().start()
@@ -95,7 +88,7 @@ class DialogueScene(Scene):
     def _do_dialog(self, item:str|list) -> None:
         if type(item) is str:
             engine.VoiceDialog(
-                item, title=self.title, title_right=True,
+                item, title=self.name, title_right=True,
                 voice=True, on_complete=self._next_dialog
             ).play()
         elif type(item) is list:
@@ -109,8 +102,8 @@ class DialogueScene(Scene):
 
 class Level(DialogueScene):
 
-    def __init__(self, name:str=None):
-        super().__init__(name if name is not None else LEVELS[0])
+    def __init__(self, filename:str=None):
+        super().__init__(filename if filename is not None else LEVELS[0])
         self._score = 0
 
     def _get_dialogue(self) -> list:

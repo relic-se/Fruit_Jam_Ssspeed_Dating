@@ -1,7 +1,10 @@
 {
+    "name": "Gale",
+    "bitmap": "gale",
     "bitmap_transparent": 4,
+    "voice": "gale",
     "dialogue": [
-        "Hi, I'm Ellis.",
+        "Hi, I'm Gale.",
         "What bringsss you here tonight?",
         [
             {

@@ -355,7 +355,7 @@ class OptionDialog(Entity):
         else:
             VoiceDialog(
                 self._response[self._response_index],
-                title=(scene.current_scene.title if scene.current_scene is not None else ""),
+                title=(scene.current_scene.name if scene.current_scene is not None else ""),
                 title_right=True,
                 voice=True,
                 on_complete=self._next_response_dialog,

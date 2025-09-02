@@ -1,5 +1,8 @@
 {
+    "name": "Ozzie",
+    "bitmap": "ozzie",
     "bitmap_transparent": 5,
+    "voice": "ozzie",
     "dialogue": [
         "Hi, I'm Ozzie. Sssorry if I seem awkward, I don't normally do things like thisss and wanted to challenge myssself.",
         "What bringsss you here tonight?",
