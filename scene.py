@@ -53,6 +53,7 @@ class Title(Scene):
 
     def start(self) -> None:
         super().start()
+        sound.stop_music()
         engine.Sequence(
             engine.Title(),
             self.complete
@@ -60,6 +61,7 @@ class Title(Scene):
 
     def complete(self) -> None:
         super().complete()
+        sound.play_music()
         engine.Sequence(
             engine.Fade(),
             self._next_scene
@@ -195,6 +197,10 @@ class Epilogue(DialogueScene):
 
     def _get_dialogue(self) -> list:
         return self._data["epilogue"]
+    
+    def start(self) -> None:
+        sound.play_music("epilogue")
+        super().start()
     
     def complete(self) -> None:
         if not self._results:
