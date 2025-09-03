@@ -2,7 +2,7 @@
     "name": "Blinka",
     "bitmap": "blinka",
     "bitmap_transparent": 4,
-    "voice": "max",
+    "voice": "blinka",
     "dialogue": [
         "Welcome to ssspeed dating! I sssseee you're new here. My name'sss Blinka.",
         "Before we begin the fun, why don't you tell me your name?",
