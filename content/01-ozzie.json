@@ -73,16 +73,16 @@
                 ],
                 "score": 10,
                 "response": [
-                    "_Ozzie smiles excitedly and nods in friendly agreement.",
-                    "_You ask him what he likes to do in his free time."
+                    "[quiet]Ozzie smiles excitedly and nods in friendly agreement.",
+                    "[quiet]You ask him what he likes to do in his free time."
                 ]
             },
             {
                 "message": "My friends come over a lot to hang. I have a rad gamer room.",
                 "score": 2,
                 "response": [
-                    "_Ozzie eyes widen in amazement.",
-                    "_He clears his throat, and you ask him what he and his friends like to do instead?"
+                    "[quiet]Ozzie eyes widen in amazement.",
+                    "[quiet]He clears his throat, and you ask him what he and his friends like to do instead?"
                 ]
             },
             {
@@ -91,7 +91,7 @@
                     "We hit the clubsss or cassinoesss when we can."
                 ],
                 "score": -5,
-                "response": "_Ozzie looks at you blankly. You ask \"What about you?\""
+                "response": "[quiet]Ozzie looks at you blankly. You ask \"What about you?\""
             }
         ],
         "Life can get in the way sometimesss, but I have a couple close friends.",
@@ -105,9 +105,9 @@
                 ],
                 "score": 10,
                 "response": [
-                    "[buzzer]Okay Sssnakesss! Move to Sssnake Number two.",
+                    "[quiet][buzzer]Okay Sssnakesss! Move to Sssnake Number two.",
                     "Yum! I would love to invite you next time.",
-                    "_Ozzie says as they excitedly look back over their shoulder as they move to the next table."
+                    "[quiet]Ozzie says as they excitedly look back over their shoulder as they move to the next table."
                 ]
             },
             {
@@ -117,19 +117,19 @@
                 ],
                 "score": 2,
                 "response": [
-                    "[buzzer]Okay Sssnakesss! Move to Sssnake Number two.",
-                    "_Ozzie offers you a sad smile and says...",
+                    "[quiet][buzzer]Okay Sssnakesss! Move to Sssnake Number two.",
+                    "[quiet]Ozzie offers you a sad smile and says...",
                     "Nice meeting you!",
-                    "_before moving to the next table..."
+                    "[quiet]before moving to the next table..."
                 ]
             },
             {
                 "message": "Pretty basssic.",
                 "score": -5,
                 "response": [
-                    "[buzzer]Okay Sssnakesss! Move to Sssnake Number two.",
-                    "_Ozzie looks relieved at the sound of the buzzer.",
-                    "_They slither off to the next table."
+                    "[quiet][buzzer]Okay Sssnakesss! Move to Sssnake Number two.",
+                    "[quiet]Ozzie looks relieved at the sound of the buzzer.",
+                    "[quiet]They slither off to the next table."
                 ]
             }
         ]

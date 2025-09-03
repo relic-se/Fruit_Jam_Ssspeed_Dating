@@ -15,11 +15,9 @@ import sys
 import supervisor
 from terminalio import FONT
 
-from adafruit_display_text.label import Label
 import adafruit_imageload
 import adafruit_usb_host_mouse
 import asyncio
-from font_knewave_webfont_24 import FONT as FONT_TITLE
 import relic_usb_host_gamepad
 
 import config
@@ -54,7 +52,7 @@ def do_action(action:int) -> None:
     global started
     if action == ACTION_SELECT:
         sound.play_sfx(sound.SFX_CLICK)
-        if engine.current_event is not None and isinstance(engine.current_event, engine.Entity):
+        if engine.current_event is not None:
             engine.current_event.select()
     elif action == ACTION_QUIT:
         supervisor.reload()
@@ -72,9 +70,8 @@ async def mouse_task() -> None:
                 else:
                     timeouts = 0
                     if "left" in pressed_btns and (previous_pressed_btns is None or "left" not in previous_pressed_btns):
-                        # TODO: define selected based on position
                         do_action(ACTION_SELECT)
-                    previous_pressed_btns = pressed_btns
+                previous_pressed_btns = pressed_btns
                 await asyncio.sleep(1/config.TARGET_FRAME_RATE)
             graphics.reset_cursor()
         await asyncio.sleep(1)

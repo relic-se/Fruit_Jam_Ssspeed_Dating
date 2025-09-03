@@ -38,20 +38,23 @@ def play_voice() -> None:
 
 def load_voice(name:str) -> None:
     global VOICE
+    unload_voice()
+    if len(name):
+        path = pathlib.Path("sounds/{:s}".format(name))
+        if path.exists():
+            VOICE = []
+            for filename in os.listdir(path.absolute()):
+                if filename.endswith(".wav"):
+                    VOICE.append(audiocore.WaveFile((path / filename).absolute()))
+            if not len(VOICE):
+                unload_voice()
+
+def unload_voice() -> None:
+    global VOICE
+    hardware.mixer.voice[2].stop()
     if VOICE is not None:
-        hardware.mixer.voice[2].stop()
         del VOICE
         VOICE = None
-
-    path = pathlib.Path("sounds/{:s}".format(name))
-    if path.exists():
-        VOICE = []
-        for filename in os.listdir(path.absolute()):
-            if filename.endswith(".wav"):
-                VOICE.append(audiocore.WaveFile((path / filename).absolute()))
-        if not len(VOICE):
-            del VOICE
-            VOICE = None
 
 def is_voice_playing() -> bool:
     if hardware.tlv320_present:

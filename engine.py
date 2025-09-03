@@ -3,7 +3,9 @@
 # SPDX-License-Identifier: GPLv3
 import displayio
 import fontio
+import json
 import random
+import re
 import supervisor
 from terminalio import FONT
 import vectorio
@@ -52,6 +54,9 @@ class Event:
         self._active = False
 
     def update(self) -> None:
+        pass
+
+    def select(self) -> None:
         pass
         
     def complete(self) -> None:
@@ -122,9 +127,6 @@ class Entity(Event):
         del self._group
         super().complete()
 
-    def select(self) -> None:
-        pass
-
 class Fade(Entity):
 
     def __init__(self, speed:int=2, reverse:bool=False, **kwargs):
@@ -147,18 +149,21 @@ class Fade(Entity):
 
     def update(self) -> None:
         super().update()
-        if self._active:
-            self._index += self._speed
-            if self._index < graphics.FADE_TILES:
-                self._update_tile()
-            else:
-                self.complete()
+        self._index += self._speed
+        if self._index < graphics.FADE_TILES:
+            self._update_tile()
+        else:
+            self.complete()
 
     def _update_tile(self) -> None:
         index = self._index if not self._reverse else graphics.FADE_TILES-self._index-1
         for x in range(self._tg.width):
             for y in range(self._tg.height):
                 self._tg[x, y] = index
+
+    def select(self) -> None:
+        super().select()
+        self.complete()
     
     def complete(self) -> None:
         if self._reverse:
@@ -188,28 +193,38 @@ class Animator(Event):
 
     def update(self) -> None:
         super().update()
-        if self._active:
-            if self.animating:
-                self._target.x = (self._frames * self._velocity[0]) + self._start[0]
-                self._target.y = (self._frames * self._velocity[1]) + self._start[1]
-                self._frames += 1
-            else:
-                self._target.x, self._target.y = self._end
-                self.complete()
+        if self.animating:
+            self._target.x = (self._frames * self._velocity[0]) + self._start[0]
+            self._target.y = (self._frames * self._velocity[1]) + self._start[1]
+            self._frames += 1
+        else:
+            self._target.x, self._target.y = self._end
+            self.complete()
+
+    def select(self) -> None:
+        super().select()
+        self.complete()
+    
+    def complete(self) -> None:
+        self._target.x, self._target.y = self._end
+        super().complete()
+
+command_regex = re.compile("\[(\w+)\]")
 
 class VoiceDialog(Entity):
 
     def __init__(self, text:str, voice:bool=True, on_complete:callable=None, **kwargs):
-        command = None
-        if text.startswith("_"):
-            command = "_"
-        elif text.startswith("[buzzer]"):
-            command = "[buzzer]"
-            sound.play_sfx(sound.SFX_BUZZER)
-        if command is not None:
-            voice = False
-            text = text[len(command):].lstrip()
-            kwargs["title"] = ""
+        while (command := command_regex.search(text)):
+            replace = ""
+            if command.group(1) == "name":
+                replace = scene.player_name
+            elif command.group(1) == "buzzer":
+                sound.play_sfx(sound.SFX_BUZZER)
+            elif command.group(1) == "quiet":
+                voice = False
+                kwargs["title"] = ""
+            text = text[:command.start(0)] + replace + text[command.end(0):]
+        text = text.strip()
 
         super().__init__(parent=graphics.upper_group, on_complete=on_complete)
 
@@ -259,15 +274,18 @@ class VoiceDialog(Entity):
 
 class OptionDialog(Entity):
 
-    def __init__(self, options:list, **kwargs):
+    def __init__(self, options:list, shuffle:bool=True, **kwargs):
         super().__init__(parent=graphics.upper_group, **kwargs)
 
         # shuffle options
-        self._options = []
-        while len(options):
-            index = random.randint(0, len(options)-1)
-            option = options.pop(index)
-            self._options.append(option)
+        if shuffle:
+            self._options = []
+            while len(options):
+                index = random.randint(0, len(options)-1)
+                option = options.pop(index)
+                self._options.append(option)
+        else:
+            self._options = options
 
         self._dialogs = []
         for option in self._options:
@@ -316,7 +334,7 @@ class OptionDialog(Entity):
         option = self._options[selected]
         if type(option) is dict:
 
-            if scene.current_scene is not None:
+            if scene.current_scene is not None and hasattr(scene.current_scene, "score"):
                 scene.current_scene.score += option.get("score", 0)
 
             if type(option.get("message")) is list:
@@ -344,7 +362,7 @@ class OptionDialog(Entity):
         else:
             VoiceDialog(
                 self._extra[self._extra_index],
-                title="You", voice=False,
+                title=scene.player_name, voice=False,
                 on_complete=self._next_extra_dialog,
             ).play()
 
@@ -406,7 +424,12 @@ class Results(Entity):
         bar_width = 16
         bar_y = graphics.display.height - 32
 
-        for index, name in enumerate(scene.LEVELS):
+        for index, filename in enumerate(scene.LEVELS):
+            name = filename[len("00-"):-len(".json")]
+            with open("content/" + filename, "r") as f:
+                data = json.load(f)
+                name = data.get("name", name)
+
             score = scene.level_scores[index] - min_score
             x = width * index + width // 2
 
@@ -523,8 +546,9 @@ KEYBOARD_CHARS = (
 
 class Keyboard(Entity):
 
-    def __init__(self, font:fontio.FontProtocol=FONT_TITLE, size:int=16, gap:int=2, margin:int=4):
-        super().__init__(parent=graphics.overlay_group)
+    def __init__(self, font:fontio.FontProtocol=FONT_TITLE, size:int=16, gap:int=2, margin:int=4, max_length:int=16, **kwargs):
+        super().__init__(parent=graphics.overlay_group, **kwargs)
+        self._max_length = max(max_length, 1)
 
         keys_height = len(KEYBOARD_CHARS) * (size + gap) - gap
         bb_height = font.get_bounding_box()[1]
@@ -585,7 +609,20 @@ class Keyboard(Entity):
             x=graphics.display.width - graphics.WINDOW_TILE_SIZE - size,
             y=graphics.display.height - graphics.WINDOW_TILE_SIZE - size,
         )
+        self._enter.hidden = True
         self._group.append(self._enter)
+
+    @property
+    def upper(self) -> bool:
+        return self._keys[0].text.isupper()
+    
+    @upper.setter
+    def upper(self, value:bool) -> None:
+        for key in self._keys:
+            if value:
+                key.text = key.text.upper()
+            else:
+                key.text = key.text.lower()
 
     def update(self) -> None:
         super().update()
@@ -603,24 +640,30 @@ class Keyboard(Entity):
             for key in self._keys:
                 if key.contains(cursor_pos):
                     self._text.text += key.text
+                    if len(self._text.text) > self._max_length:
+                        self._text.text = self._text.text[:self._max_length]
+                    if self.upper:
+                        self.upper = False
+                    if self._enter.hidden:
+                        self._enter.hidden = False
                     break
             
             if self._upper.contains(cursor_pos):
-                isupper = ord(self._keys[0].text) < ord("a")
-                for key in self._keys:
-                    if isupper:
-                        key.text = key.text.lower()
-                    else:
-                        key.text = key.text.upper()
+                self.upper = not self.upper
 
             text = self._text.text
             if self._back.contains(cursor_pos) and len(text) > 1:
-                self._text.text = text[:len(text)-2]
+                self._text.text = text[:len(text)-2]  # don't know why this needs to be 2, Label is adding a "l" to the end
+                if not len(self._text.text):
+                    self._enter.hidden = True
 
-            if self._enter.contains(cursor_pos):
+            if not self._enter.hidden and self._enter.contains(cursor_pos):
                 self.complete()
     
     def complete(self) -> None:
+        # save name
+        scene.player_name = self._text.text
+
         self._group.remove(self._keys)
         del self._keys
         for key in (self._upper, self._back, self._enter):

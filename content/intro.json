@@ -1,0 +1,31 @@
+{
+    "name": "Blinka",
+    "bitmap": "blinka",
+    "bitmap_transparent": 4,
+    "voice": "max",
+    "dialogue": [
+        "Welcome to ssspeed dating! I sssseee you're new here. My name'sss Blinka.",
+        "Before we begin the fun, why don't you tell me your name?",
+        "[enter_name]",
+        "[name]? That'ssss a sssplendid name.",
+        "Sssssso, here'sss what we're going to do. Ssssome ssnakess are going to come to your table one at a time.",
+        "You'll have a few minutessss to talk to each friendly ssssnake until you hear the buzzer.",
+        "Once the buzzer buzzesss, the next ssssnake will make their roundsss.",
+        "At the end, you'll get a chance to chat again with one of the sssnakess if you messshed well.",
+        "Do you undersssstand?",
+        [
+            {
+                "message": "Yessss, no problem!",
+                "response": "Good. Ssoundssss like you'll do great."
+            },
+            {
+                "message": "No, not really.",
+                "response": [
+                    "Well, it'sss not alwayssss easssy your firssst time around.",
+                    "But I'm sssssure you'll do fine."
+                ]
+            }
+        ],
+        "[buzzer]Okay everybody, let'ssss get thisss sshow on the road!"
+    ]
+}
