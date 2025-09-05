@@ -14,7 +14,6 @@ from adafruit_display_text.label import Label
 import adafruit_imageload
 from font_knewave_webfont_24 import FONT as FONT_TITLE
 
-import config
 import graphics
 import scene
 import sound
@@ -183,7 +182,7 @@ class Animator(Event):
         else:
             self._start = (self._target.x, self._target.y)
         self._end = end
-        self._duration = int(config.TARGET_FRAME_RATE * duration)
+        self._duration = int(30 * duration)
         self._frames = 0
         self._velocity = tuple([int((self._end[i] - self._start[i]) / self._duration) for i in range(2)])
 

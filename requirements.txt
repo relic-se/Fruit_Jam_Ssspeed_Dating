@@ -2,8 +2,6 @@ adafruit_display_text
 adafruit_fruitjam
 adafruit_imageload
 adafruit_pathlib
-adafruit_simplemath
-adafruit_tlv320
 adafruit_usb_host_mouse
 asyncio
 font_knewave_webfont_24

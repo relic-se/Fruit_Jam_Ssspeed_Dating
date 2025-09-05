@@ -20,7 +20,6 @@ import adafruit_usb_host_mouse
 import asyncio
 import relic_usb_host_gamepad
 
-import config
 import engine
 import graphics
 import hardware
@@ -72,7 +71,7 @@ async def mouse_task() -> None:
                     if "left" in pressed_btns and (previous_pressed_btns is None or "left" not in previous_pressed_btns):
                         do_action(ACTION_SELECT)
                 previous_pressed_btns = pressed_btns
-                await asyncio.sleep(1/config.TARGET_FRAME_RATE)
+                await asyncio.sleep(1/30)
             graphics.reset_cursor()
         await asyncio.sleep(1)
 
@@ -93,7 +92,7 @@ async def gamepad_task() -> None:
         elif not gamepad.connected:
             await asyncio.sleep(1)
         else:
-            await asyncio.sleep(1/config.TARGET_FRAME_RATE)
+            await asyncio.sleep(1/30)
 
 async def keyboard_task() -> None:
     while True:
@@ -110,20 +109,17 @@ async def keyboard_task() -> None:
                 do_action(ACTION_PAUSE)
             elif key.lower() == "q":
                 do_action(ACTION_QUIT)
-        await asyncio.sleep(1/config.TARGET_FRAME_RATE)
+        await asyncio.sleep(1/30)
 
-if hardware.buttons is not None:
-    async def buttons_task() -> None:
-        while True:
-            if (event := hardware.buttons.events.get()):
-                if event.pressed:
-                    if event.key_number == 0:
-                        do_action(ACTION_DOWN)
-                    elif event.key_number == 1:
-                        do_action(ACTION_SELECT)
-                    elif event.key_number == 2:
-                        do_action(ACTION_UP)
-            await asyncio.sleep(1/config.TARGET_FRAME_RATE)
+async def buttons_task() -> None:
+    while True:
+        if hardware.peripherals.button1:
+            do_action(ACTION_DOWN)
+        elif hardware.peripherals.button2:
+            do_action(ACTION_SELECT)
+        elif hardware.peripherals.button3:
+            do_action(ACTION_UP)
+        await asyncio.sleep(0.1)
 
 async def engine_task() -> None:
     while True:
@@ -131,14 +127,12 @@ async def engine_task() -> None:
         await graphics.refresh()
 
 async def main():
-    tasks = [
+    await asyncio.gather(
         asyncio.create_task(mouse_task()),
         asyncio.create_task(gamepad_task()),
         asyncio.create_task(keyboard_task()),
         asyncio.create_task(engine_task()),
-    ]
-    if hardware.buttons is not None:
-        tasks.append(asyncio.create_task(buttons_task()))
-    await asyncio.gather(*tasks)
+        asyncio.create_task(buttons_task()),
+    )
 
 asyncio.run(main())

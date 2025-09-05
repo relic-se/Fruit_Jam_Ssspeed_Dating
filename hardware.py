@@ -1,54 +1,34 @@
 # SPDX-FileCopyrightText: 2025 Cooper Dalrymple (@relic-se)
 #
 # SPDX-License-Identifier: GPLv3
-import audiobusio
 import audiomixer
-import board
-import time
 
-import adafruit_tlv320
+import adafruit_fruitjam
 
-import config
+try:
+    import launcher_config
+    config = launcher_config.LauncherConfig()
+except ImportError:
+    config = None
 
-# Check if DAC is connected
-i2c = board.I2C()
-while not i2c.try_lock():
-    time.sleep(0.01)
-tlv320_present = 0x18 in i2c.scan()
-i2c.unlock()
+peripherals = adafruit_fruitjam.peripherals.Peripherals(
+    sample_rate=11025,
+    bit_depth=8,
+)
 
-if tlv320_present:
+if config is not None:
+    peripherals.audio_output = config.audio_output
+    peripherals.volume = config.audio_volume
 
-    # setup audio
-    dac = adafruit_tlv320.TLV320DAC3100(i2c)
+if peripherals.dac_present:
 
-    # set sample rate & bit depth
-    dac.configure_clocks(
-        sample_rate=config.SAMPLE_RATE,
-        bit_depth=config.BIT_DEPTH,
+    # setup audio mixer
+    mixer = audiomixer.Mixer(
+        voice_count=3,
+        buffer_size=1024,
+        channel_count=1,
+        sample_rate=peripherals.dac.sample_rate,
+        bits_per_sample=peripherals.dac.bit_depth,
+        samples_signed=peripherals.dac.bit_depth >= 16,
     )
-
-    if config.launcher.audio_output_speaker:
-        dac.speaker_output = True
-    else:
-        dac.headphone_output = True
-        dac.headphone_volume = -15
-    dac.dac_volume = config.launcher.audio_volume_db
-
-    # setup audio output
-    audio_config = {
-        "buffer_size": 1024,
-        "channel_count": 1,
-        "sample_rate": config.SAMPLE_RATE,
-        "bits_per_sample": config.BIT_DEPTH,
-        "samples_signed": config.BIT_DEPTH >= 16,
-    }
-    audio = audiobusio.I2SOut(board.I2S_BCLK, board.I2S_WS, board.I2S_DIN)
-    mixer = audiomixer.Mixer(voice_count=3, **audio_config)
-    audio.play(mixer)
-
-if "BUTTON1" in dir(board) and "BUTTON2" in dir(board) and "BUTTON3" in dir(board):
-    from keypad import Keys
-    buttons = Keys((board.BUTTON1, board.BUTTON2, board.BUTTON3), value_when_pressed=False, pull=True)
-else:
-    buttons = None
+    peripherals.audio.play(mixer)

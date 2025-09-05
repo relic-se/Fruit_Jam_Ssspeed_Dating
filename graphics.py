@@ -14,8 +14,6 @@ from adafruit_fruitjam.peripherals import request_display_config
 import adafruit_imageload
 import asyncio
 
-import config
-
 displayio.release_displays()
 
 COLOR_WHITE = 0xffffff
@@ -63,7 +61,7 @@ root_group.append(overlay_group)
 async def refresh() -> None:
     # update display if any changes were made
     display.refresh()
-    await asyncio.sleep(1/config.TARGET_FRAME_RATE)
+    await asyncio.sleep(1/30)
 
 # load the fade bitmap
 fade_bmp, fade_palette = adafruit_imageload.load("bitmaps/fade.bmp")

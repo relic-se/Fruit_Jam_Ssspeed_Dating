@@ -24,7 +24,6 @@ ASSET_DIRS = (
 SRC_FILES = (
     "boot.py",
     "code.py",
-    "config.py",
     "engine.py",
     "graphics.py",
     "hardware.py",
