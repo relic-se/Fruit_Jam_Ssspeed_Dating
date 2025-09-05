@@ -19,8 +19,12 @@ peripherals = adafruit_fruitjam.peripherals.Peripherals(
 if config is not None:
     peripherals.audio_output = config.audio_output
     peripherals.volume = config.audio_volume
+else:
+    peripherals.audio_output = "headphone"
+    peripherals.volume = 12
 
-if peripherals.dac_present:
+if peripherals.dac is not None:
+    peripherals.dac.headphone_volume = -15  # line level
 
     # setup audio mixer
     mixer = audiomixer.Mixer(
