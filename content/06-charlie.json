@@ -36,7 +36,7 @@
             {
                 "message": [
                     "You mention your past love life and what you've learned from it.",
-                    "You agree this is fun, with no rights or wrongs when it's just yourssself being you."
+                    "[quiet]You agree this is fun, with no rights or wrongs when it's just yourssself being you."
                 ],
                 "score": 10
             },
@@ -50,7 +50,7 @@
             {
                 "message": [
                     "You look around and nod trying to pass the time.",
-                    "You ask about what they did before this."
+                    "[quiet]You ask about what they did before this."
                 ],
                 "score": -5
             }
