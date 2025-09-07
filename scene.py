@@ -19,18 +19,14 @@ level_regex = re.compile("^\d\d-[\w-]+\.json$")
 LEVELS = tuple(sorted([filename for filename in os.listdir("content") if level_regex.match(filename)]))
 
 current_scene = None
-level_index = 0
-level_scores = [0] * len(LEVELS)
-
-player_name = ""
 
 def reset() -> None:
     # reset level and scores
     global level_index, player_name, level_scores
     level_index = 0
-    for i in range(len(level_scores)):
-        level_scores[i] = 0
-    player_name = ""
+    level_scores = [0] * len(LEVELS)
+    player_name = "Player"
+reset()
 
 class Scene:
 
