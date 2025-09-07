@@ -4,34 +4,93 @@
     "bitmap_transparent": 3,
     "voice": "charlie",
     "dialogue": [
-        "Hi, I'm Charlie.",
-        "What bringsss you here tonight?",
+        "Howdy. I'm Charlie? What's your name, comrade?",
         [
             {
-                "message": "I love meeting new sssnakesss. It can be a wonderful challenge. I go to thessse thingsss all the time.",
+                "message": "I'm [name]. You excited for the outcome of tonight?",
                 "score": 10,
                 "response": [
-                    "I admire your sssocial gumption and posssitivity.",
-                    "Have you ever found a date at anyone one of thessse thingsss?"
+                    "Yeah, it'll turn out how it turnsss out.",
+                    "Thisss isssn't my firssst time here and I try not to get upssset when I don't match up with anybody.",
+                    "I jussst have fun with it. No right or wrong way to it."
                 ]
             },
             {
-                "message": "You're not here to find true love? I'm trying again.",
+                "message": "My namesss [name]. You fighting the good fight?",
                 "score": 2,
                 "response": [
-                    "I don't really believe in true love or sssoulmatesss.",
-                    "Have you found a date at one of thessse thingsss?"
+                    "Well, that'sss a loaded question. I'd sssay yesss, but it'sss all about perssspective.",
+                    "Asss for tonight, I've been fighting, but I won't get upssset if I don't match up with anybody again."
                 ]
             },
             {
-                "message": "Well, obviousssly I'm here to find a date. If thisss time goesss well.",
+                "message": "[name]. You having an luck tonight?",
                 "score": -5,
                 "response": [
-                    "That makesss sssenssse.",
-                    "Ssso have you ever even found a date at one of thessse thingsss?"
+                    "You need luck at thessse thingsss, buddy.",
+                    "You've got to open up, or that'sss what my I won't be upssset if I don't match up with anybody."
                 ]
             }
-        ]
+        ],
+        [
+            {
+                "message": [
+                    "You mention your past love life and what you've learned from it.",
+                    "You agree this is fun, with no rights or wrongs when it's just yourssself being you."
+                ],
+                "score": 10
+            },
+            {
+                "message": [
+                    "You go into a philsopical rant on morality and the current politcal climate.",
+                    "[quiet]Charlie seems very up-to-date with news and agrees with you a little bit."
+                ],
+                "score": 2
+            },
+            {
+                "message": [
+                    "You look around and nod trying to pass the time.",
+                    "You ask about what they did before this."
+                ],
+                "score": -5
+            }
+        ],
+        "Your an okay sssnake, [name]. Got any family? Where do you work?",
+        [
+            {
+                "message": [
+                    "I have a big family. I'm the baby out of all of usss ssserpentsss.",
+                    "I was born and raised here, same with my parents. I curently work at my dad's office. He's a fang doctor."
+                ],
+                "score": 10,
+                "response": [
+                    "Ten-Four. What'sss your popsss name? Is it the office uptown?",
+                    "Then I might know him. We were in the sssame sssquad in boot camp.",
+                    "I wasss in the military, retired four yearsss ago. Got injured. I could've kept going."
+                ]
+            },
+            {
+                "message": [
+                    "Those are two important questions. I am an only child and live at home with my mom.",
+                    "My father isn't in the picture anymore. I work at the gym."
+                ],
+                "score": 2,
+                "response": [
+                    "What a ssshame. I treasssure family above all. You take care of your mom, you hear.",
+                    "If it was one thing I learned from the military, it'sss loyality and family mattersss."
+                ]
+            },
+            {
+                "message": "Yeah. Sssome sssisss and brosss. I don't sssee them often. I'm currently unemployed.",
+                "score": -5,
+                "response": [
+                    "You ever thought about joining the military?",
+                    "Thossse sssnakesss were my sssecond family. They'll get you in order."
+                ]
+            }
+        ],
+        "[announcer][buzzer]Okay Sssnakesss! That's the end!! Let's tally up our snakes and pair with our matches",
+        "[quiet]Charlie grunts and slithers off towards Blinka to find out his match."
     ],
     "epilogue": [
         "It was nice talking to you",
