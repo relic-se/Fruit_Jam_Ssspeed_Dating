@@ -23,6 +23,13 @@ current_event = None
 def update() -> None:
     if current_event is not None:
         current_event.update()
+        if (pos := graphics.get_cursor_pos(True)) is not None:
+            current_event.mousemove(*pos)
+
+def mouseclick() -> None:
+    sound.play_sfx(sound.SFX_CLICK)
+    if current_event is not None and (pos := graphics.get_cursor_pos()) is not None:
+        current_event.mouseclick(*pos)
 
 class Event:
 
@@ -55,8 +62,14 @@ class Event:
     def update(self) -> None:
         pass
 
-    def select(self) -> None:
+    def mousemove(self, x:int, y:int) -> None:
         pass
+
+    def mouseclick(self, x:int, y:int) -> None:
+        self.select()
+
+    def select(self) -> None:
+        self.complete()
         
     def complete(self) -> None:
         global current_event
@@ -147,7 +160,6 @@ class Fade(Entity):
             graphics.main_group.hidden = False
 
     def update(self) -> None:
-        super().update()
         self._index += self._speed
         if self._index < graphics.FADE_TILES:
             self._update_tile()
@@ -159,10 +171,6 @@ class Fade(Entity):
         for x in range(self._tg.width):
             for y in range(self._tg.height):
                 self._tg[x, y] = index
-
-    def select(self) -> None:
-        super().select()
-        self.complete()
     
     def complete(self) -> None:
         if self._reverse:
@@ -191,7 +199,6 @@ class Animator(Event):
         return self._frames <= self._duration
 
     def update(self) -> None:
-        super().update()
         if self.animating:
             self._target.x = (self._frames * self._velocity[0]) + self._start[0]
             self._target.y = (self._frames * self._velocity[1]) + self._start[1]
@@ -199,10 +206,6 @@ class Animator(Event):
         else:
             self._target.x, self._target.y = self._end
             self.complete()
-
-    def select(self) -> None:
-        super().select()
-        self.complete()
     
     def complete(self) -> None:
         self._target.x, self._target.y = self._end
@@ -257,14 +260,8 @@ class VoiceDialog(Entity):
         return self._voice and self._voice_index < self._voice_len
 
     def update(self) -> None:
-        super().update()
         if self.voice_playing and not sound.is_voice_playing():
             self._next_voice()
-        # TODO: Handle mouse hover?
-    
-    def select(self) -> None:
-        super().select()
-        self.complete()
 
     def complete(self) -> None:
         self._group.remove(self._dialog)
@@ -304,33 +301,25 @@ class OptionDialog(Entity):
         self._response = None
         self._response_index = -1
 
-    def update(self) -> None:
-        super().update()
-        if graphics.cursor:
-            cursor_pos = graphics.get_cursor_pos()
-            for dialog in self._dialogs:
-                dialog.hover(dialog.contains(cursor_pos))
+    def mousemove(self, x:int, y:int) -> None:
+        for dialog in self._dialogs:
+            dialog.hover(dialog.contains(x, y))
 
-    def select(self) -> None:
-        super().select()
+    def mouseclick(self, x:int, y:int) -> None:
+        for index, dialog in enumerate(self._dialogs):
+            if dialog.contains(x, y):
+                self.select(index)
+                break
 
-        index = None
-        if graphics.cursor:
-            cursor_pos = graphics.get_cursor_pos()
-            for dialog_index, dialog in enumerate(self._dialogs):
-                if dialog.contains(cursor_pos):
-                    index = dialog_index
-                    break
-        if index is None:
+    def select(self, index:int = None) -> None:
+        if index is None or index < 0 or index >= len(self._options):
             return
         
-        selected = min(max(index, 0), len(self._options))
-
         # hide dialog options
         for dialog in self._dialogs:
             self._group.remove(dialog)
 
-        option = self._options[selected]
+        option = self._options[index]
         if type(option) is dict:
 
             if scene.current_scene is not None and hasattr(scene.current_scene, "score"):
@@ -457,16 +446,11 @@ class Results(Entity):
             anchored_position=(graphics.display.width-8, graphics.display.height//2+graphics.WINDOW_TILE_SIZE),
         ))
 
-    def select(self) -> None:
-        super().select()
-        self.complete()
-
-def label_contains(label:Label, touch_tuple:tuple) -> bool:
-    x, y, w, h = label.bounding_box
-    x += label.x
-    y += label.y
-    tx, ty, _t = touch_tuple
-    return 0 <= tx - x <= w and 0 <= ty - y <= h
+def label_contains(label:Label, x:int, y:int) -> bool:
+    bb_x, bb_y, bb_w, bb_h = label.bounding_box
+    bb_x += label.x
+    bb_y += label.y
+    return 0 <= x - bb_x <= bb_w and 0 <= y - bb_y <= bb_h
 
 class Title(Entity):
 
@@ -510,25 +494,22 @@ class Title(Entity):
         )
         self._group.append(self._quit_label)
 
-    def update(self) -> None:
-        super().update()
-        if graphics.cursor:
-            cursor_pos = graphics.get_cursor_pos()
-            for label in (self._start_label, self._quit_label):
-                contains = label_contains(label, cursor_pos)
-                if label.color == graphics.COLOR_PINK and contains:
-                    label.color = graphics.COLOR_WHITE
-                elif label.color == graphics.COLOR_WHITE and not contains:
-                    label.color = graphics.COLOR_PINK
+    def mousemove(self, x:int, y:int) -> None:
+        for label in (self._start_label, self._quit_label):
+            contains = label_contains(label, x, y)
+            if label.color == graphics.COLOR_PINK and contains:
+                label.color = graphics.COLOR_WHITE
+            elif label.color == graphics.COLOR_WHITE and not contains:
+                label.color = graphics.COLOR_PINK
+
+    def mouseclick(self, x:int, y:int) -> None:
+        if label_contains(self._start_label, x, y):
+            self.complete()
+        elif label_contains(self._quit_label, x, y):
+            supervisor.reload()
 
     def select(self) -> None:
-        super().select()
-        if graphics.cursor:
-            cursor_pos = graphics.get_cursor_pos()
-            if label_contains(self._start_label, cursor_pos):
-                self.complete()
-            elif label_contains(self._quit_label, cursor_pos):
-                supervisor.reload()
+        pass
     
     def complete(self) -> None:
         self._group.remove(self._start_label)
@@ -569,7 +550,7 @@ class Keyboard(Entity):
         self._group.append(self._keys)
 
         for y, row in enumerate(KEYBOARD_CHARS):
-            row_width = (len(row) - 1) * (size + gap) - gap
+            row_width = len(row) * (size + gap) - gap
             for x, char in enumerate(row):
                 self._keys.append(graphics.Key(
                     text=char, size=size,
@@ -587,7 +568,7 @@ class Keyboard(Entity):
         )
         self._group.append(self._text)
 
-        mid_row_width = (len(KEYBOARD_CHARS[1]) - 1) * (size + gap) - gap
+        mid_row_width = len(KEYBOARD_CHARS[1]) * (size + gap) - gap
 
         self._upper = graphics.Key(
             text="^", size=size,
@@ -623,41 +604,42 @@ class Keyboard(Entity):
             else:
                 key.text = key.text.lower()
 
-    def update(self) -> None:
-        super().update()
-        if graphics.cursor:
-            cursor_pos = graphics.get_cursor_pos()
-            for key in self._keys:
-                key.hover = key.contains(cursor_pos)
-            for key in (self._upper, self._back, self._enter):
-                key.hover = key.contains(cursor_pos)
+    def mousemove(self, x:int, y:int) -> None:
+        for key in self._keys:
+            key.hover = key.contains(x, y)
+        for key in (self._upper, self._back, self._enter):
+            key.hover = key.contains(x, y)
+
+    def mouseclick(self, x:int, y:int) -> None:
+        for key in self._keys:
+            if key.contains(x, y):
+                self._text.text += key.text
+                if len(self._text.text) > self._max_length:
+                    self._text.text = self._text.text[:self._max_length]
+                if self.upper:
+                    self.upper = False
+                if self._enter.hidden:
+                    self._enter.hidden = False
+                return
+        
+        if self._upper.contains(x, y):
+            self.upper = not self.upper
+            return
+
+        if self._back.contains(x, y):
+            text = self._text.text
+            if len(text):
+                text = text[:len(text)-1]
+                if not len(text):
+                    self._enter.hidden = True
+                self._text.text = text
+            return
+
+        if not self._enter.hidden and self._enter.contains(x, y):
+            return self.complete()
 
     def select(self) -> None:
-        super().select()
-        if graphics.cursor:
-            cursor_pos = graphics.get_cursor_pos()
-            for key in self._keys:
-                if key.contains(cursor_pos):
-                    self._text.text += key.text
-                    if len(self._text.text) > self._max_length:
-                        self._text.text = self._text.text[:self._max_length]
-                    if self.upper:
-                        self.upper = False
-                    if self._enter.hidden:
-                        self._enter.hidden = False
-                    break
-            
-            if self._upper.contains(cursor_pos):
-                self.upper = not self.upper
-
-            text = self._text.text
-            if self._back.contains(cursor_pos) and len(text) > 1:
-                self._text.text = text[:len(text)-2]  # don't know why this needs to be 2, Label is adding a "l" to the end
-                if not len(self._text.text):
-                    self._enter.hidden = True
-
-            if not self._enter.hidden and self._enter.contains(cursor_pos):
-                self.complete()
+        pass
     
     def complete(self) -> None:
         # save name

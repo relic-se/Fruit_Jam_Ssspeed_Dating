@@ -50,7 +50,6 @@ ACTION_QUIT   = const(4)
 def do_action(action:int) -> None:
     global started
     if action == ACTION_SELECT:
-        sound.play_sfx(sound.SFX_CLICK)
         if engine.current_event is not None:
             engine.current_event.select()
     elif action == ACTION_QUIT:
@@ -69,7 +68,7 @@ async def mouse_task() -> None:
                 else:
                     timeouts = 0
                     if "left" in pressed_btns and (previous_pressed_btns is None or "left" not in previous_pressed_btns):
-                        do_action(ACTION_SELECT)
+                        engine.mouseclick()
                 previous_pressed_btns = pressed_btns
                 await asyncio.sleep(1/30)
             graphics.reset_cursor()

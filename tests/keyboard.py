@@ -2,19 +2,11 @@
 #
 # SPDX-License-Identifier: GPLv3
 import asyncio
-import displayio
 
-import adafruit_imageload
 import adafruit_usb_host_mouse
 
 import engine
 import graphics
-import sound
-
-# add background image
-bg_bmp, bg_palette = adafruit_imageload.load("bitmaps/bg.bmp")
-bg_tg = displayio.TileGrid(bg_bmp, pixel_shader=bg_palette)
-graphics.lower_group.append(bg_tg)
 
 engine.Keyboard().play()
 
@@ -33,9 +25,7 @@ async def mouse_task() -> None:
                 else:
                     timeouts = 0
                     if "left" in pressed_btns and (previous_pressed_btns is None or "left" not in previous_pressed_btns):
-                        sound.play_sfx(sound.SFX_CLICK)
-                        if engine.current_event is not None and isinstance(engine.current_event, engine.Entity):
-                            engine.current_event.select()
+                        engine.mouseclick()
                 previous_pressed_btns = pressed_btns
                 await asyncio.sleep(1/30)
             graphics.reset_cursor()

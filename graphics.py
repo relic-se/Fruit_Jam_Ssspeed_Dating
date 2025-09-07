@@ -76,6 +76,8 @@ WINDOW_TILE_SIZE = 8
 
 # mouse cursor
 cursor = None
+last_cursor_pos = (-1, -1)
+
 def set_cursor(tilegrid:displayio.TileGrid) -> None:
     global cursor
     if cursor is not None:
@@ -86,12 +88,19 @@ def set_cursor(tilegrid:displayio.TileGrid) -> None:
     root_group.append(cursor)
 
 def reset_cursor():
-    global cursor
+    global cursor, last_cursor_pos
     root_group.remove(cursor)
     cursor = None
+    last_cursor_pos = (-1, -1)
 
-def get_cursor_pos() -> tuple:
-    return (cursor.x, cursor.y, 0)
+def get_cursor_pos(moved:bool = False) -> tuple:
+    global last_cursor_pos, cursor
+    if cursor:
+        cursor_pos = (cursor.x, cursor.y)
+        if not moved or not all((cursor_pos[i] == last_cursor_pos[i] for i in range(len(cursor_pos)))):
+            if moved:
+                last_cursor_pos = cursor_pos
+            return cursor_pos
 
 DIALOG_LINE_WIDTH = ((display.width // WINDOW_TILE_SIZE) - 10) * WINDOW_TILE_SIZE
 
@@ -192,9 +201,8 @@ class Dialog(displayio.Group):
     def height(self) -> int:
         return self._tg.height * WINDOW_TILE_SIZE
     
-    def contains(self, touch_tuple:tuple) -> bool:
-        touch_tuple = (touch_tuple[0] - self.x, touch_tuple[1] - self.y, 0)
-        return self._tg.contains(touch_tuple)
+    def contains(self, x:int, y:int) -> bool:
+        return self._tg.contains((x - self.x, y - self.y, 0))
     
     def hover(self, value:bool) -> None:
         self._tg_palette[2] = COLOR_RED if value else self._tg_palette_default
@@ -268,9 +276,8 @@ class Key(displayio.Group):
         )
         self.append(self._label)
     
-    def contains(self, touch_tuple:tuple) -> bool:
-        tx, ty = touch_tuple[0] - self.x, touch_tuple[1] - self.y
-        return 0 <= tx <= self._outline.width and 0 <= ty <= self._outline.height
+    def contains(self, x:int, y:int) -> bool:
+        return 0 <= x - self.x <= self._outline.width and 0 <= y - self.y <= self._outline.height
     
     @property
     def hover(self) -> bool:

@@ -58,10 +58,7 @@ async def mouse_task() -> None:
                 else:
                     timeouts = 0
                     if "left" in pressed_btns:
-                        if isinstance(engine.current_event, engine.OptionDialog):
-                            engine.current_event.select()
-                        elif isinstance(engine.current_event, engine.VoiceDialog):
-                            engine.current_event.complete()
+                        engine.mouseclick()
                 await asyncio.sleep(1/30)
             graphics.reset_cursor()
         await asyncio.sleep(1)
