@@ -4,32 +4,116 @@
     "bitmap_transparent": 6,
     "voice": "max",
     "dialogue": [
-        "Hi, I'm Max.",
-        "What bringsss you here tonight?",
+        "Hello! I'm Max. How are you on this fine night?",
         [
             {
-                "message": "I love meeting new sssnakesss. It can be a wonderful challenge. I go to thessse thingsss all the time.",
+                "message": "I'm doing just fine, Max. It'sss been fantastic ssso far. How are you doing?",
                 "score": 10,
-                "response": [
-                    "I admire your sssocial gumption and posssitivity.",
-                    "Have you ever found a date at anyone one of thessse thingsss?"
-                ]
+                "response": "I'm feeling the sssame way. I'm trying to keep it sssimple and experience new thingsss."
             },
             {
-                "message": "You're not here to find true love? I'm trying again.",
+                "message": [
+                    "Oh, it'sss been a big night and I don't want it to end!",
+                    "How about you?"
+                ],
                 "score": 2,
-                "response": [
-                    "I don't really believe in true love or sssoulmatesss.",
-                    "Have you found a date at one of thessse thingsss?"
-                ]
+                "response": "Sssuch enthusiasssm! You're making me feel old now, but I'm good. Thanksss."
             },
             {
-                "message": "Well, obviousssly I'm here to find a date. If thisss time goesss well.",
+                "message": [
+                    "I think it didn't go ssso well on the lassst round.",
+                    "Might need to get a drink. You want one, too?"
+                ],
                 "score": -5,
                 "response": [
-                    "That makesss sssenssse.",
-                    "Ssso have you ever even found a date at one of thessse thingsss?"
+                    "That'sss unfortunate.",
+                    "No, I have ssssome water ssstill."
                 ]
+            }
+        ],
+        "I wasss actually here lassst week for their math trivia night.",
+        "That'sss when I sssaw the poster. I really couldn't passs it up, plusss it'sss a free event.",
+        [
+            {
+                "message": [
+                    "I went to their sssudoko race lassst night when they announced it over the ssspeakersss.",
+                    "Who would have know math would bring usss together."
+                ],
+                "score": 10,
+                "response": "Nice! Math is so cool."
+            },
+            {
+                "message": [
+                    "Fun! Trivia can be ssso hard and add math on top of it.",
+                    "You must be ssso sssmart?"
+                ],
+                "score": 2,
+                "response": "I guess, I just think Math is cool."
+            },
+            {
+                "message": [
+                    "Nothing wrong with ssspending a little moolah.",
+                    "You like to calculate, huh?"
+                ],
+                "score": -5,
+                "response": [
+                    "[quiet]Max shrugs.",
+                    "Yeah. It'sss sssomething I enjoy."
+                ]
+            }
+        ],
+        [
+            {
+                "message": [
+                    "Have you played the new boardgame, ‘Numbersss'?",
+                    "I think you would love it!"
+                ],
+                "score": 10,
+                "response": [
+                    "I have!",
+                    "I do a monthly boardgame night with friendsss and that wasss the lassst one we played.",
+                    "Who knew counting and meerkatsss could be so entertaining?"
+                ]
+            },
+            {
+                "message": [
+                    "I'm more into the physssical challengesss.",
+                    "Give me a good obssstical courssse and I'll throw my whole body at it."
+                ],
+                "score": 2,
+                "response": "Wow! That ssshould be a TV ssshow. That could be very entertaining."
+            },
+            {
+                "message": "You must have been popular in ssschool, huh?",
+                "score": -2,
+                "response": "I wasss actually. I wasss alssso in theatre, which wasss pretty entertaining."
+            }
+        ],
+        "[player]So was this a whim for you to come here tonight?",
+        "In a way, yeah. I consssider myssself sssocial, and I know I'll need to meet sssnakesss to find sssomeone to like.",
+        "Ssso thisss ssseemed like a no-brainer.",
+        "[announcer][buzzer]Okay Sssnakesss! Move to Sssnake Number three.",
+        [
+            {
+                "message": [
+                    "That's sssweet. I'm kinda on the sssame path. I'm trying to keep it chill.",
+                    "I don't want to judge anyone wrongly before knowing them.",
+                    "It'sss been fun! Sssee ya around."
+                ],
+                "score": 10
+            },
+            {
+                "message": [
+                    "There'sss going to be a lot of sssnakesss.",
+                    "You'll find sssomeone eventually if you're looking for that.",
+                    "Maybe we'll meet again."
+                ],
+                "score": 2,
+                "response": "I guess, I just think Math is cool."
+            },
+            {
+                "message": "Good luck with that, pal.",
+                "score": -5
             }
         ]
     ],
