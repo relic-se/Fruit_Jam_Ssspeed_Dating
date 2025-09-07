@@ -4,31 +4,122 @@
     "bitmap_transparent": 4,
     "voice": "gale",
     "dialogue": [
-        "Hi, I'm Gale.",
-        "What bringsss you here tonight?",
+        "Good evening, the names Gale.",
+        "These things are so fast, so I've been getting straight to it, ya know?",
         [
             {
-                "message": "I love meeting new sssnakesss. It can be a wonderful challenge. I go to thessse thingsss all the time.",
+                "message": [
+                    "I've been going with the punchesss anywaysss.",
+                    "Let the flow carry on. What do you want to know?"
+                ],
+                "score": 10
+            },
+            {
+                "message": "Asssk away!",
+                "score": 2
+            },
+            {
+                "message": "If we must. What are you going to asssk?",
+                "score": -5
+            }
+        ],
+        "Hmmm... I'll think of something new. What's your favorite spot outside?",
+        [
+            {
+                "message": [
+                    "Good one! I like going to the mountainsss at the edge of the city.",
+                    "You?"
+                ],
                 "score": 10,
                 "response": [
-                    "I admire your sssocial gumption and posssitivity.",
-                    "Have you ever found a date at anyone one of thessse thingsss?"
+                    "Heck yeah! I've rock climbed there.",
+                    "Do you ever get the desire to see sssomething totally new?"
                 ]
             },
             {
-                "message": "You're not here to find true love? I'm trying again.",
+                "message": [
+                    "Oooo, that's a new one for tonight. Too bad I don't really like extensssive outdoorsss time.",
+                    "Do you have a favorite spot?"
+                ],
                 "score": 2,
                 "response": [
-                    "I don't really believe in true love or sssoulmatesss.",
-                    "Have you found a date at one of thessse thingsss?"
+                    "Haha, I try. That'sss too bad. You should get out every once in a while.",
+                    "Don't you ever want to sssee sssomething comlpetely new?"
                 ]
             },
             {
-                "message": "Well, obviousssly I'm here to find a date. If thisss time goesss well.",
+                "message": [
+                    "I have a walking path I take every now again around my apartmentsss.",
+                    "They have sssome treesss."
+                ],
+                "score": -5,
+                "response": "That's cool. Ever want to see sssomething new?"
+            }
+        ],
+        [
+            {
+                "message": [
+                    "I do. I like adventure, but I also like being prepared.",
+                    "it's an easy step for me to plan and then I am doing what I want!"
+                ],
+                "score": 10,
+                "response": [
+                    "Legit. I admire your organization.",
+                    "I have to food prep or resssearch areasss before travelling, sssince I'm a vegetarian.",
+                    "It can be hard, but worth it."
+                ]
+            },
+            {
+                "message": "I see a lot of movies. Does that count?",
+                "score": 2,
+                "response": [
+                    "Sssure! I love popcorn.",
+                    "Movie theatresss are fun, and they have ssso much vegetarian friendly food for me."
+                ]
+            },
+            {
+                "message": "Nah. I have everything I need at home.",
                 "score": -5,
                 "response": [
-                    "That makesss sssenssse.",
-                    "Ssso have you ever even found a date at one of thessse thingsss?"
+                    "Home isss where the heart isss... and fridge.",
+                    "I love cooking and I can whip up my favorite vegetarian meal whenever."
+                ]
+            }
+        ],
+        "You might find it weird that I'm a vegetarian and I would never pressure my partner into it, but I don't want anyone to change me either.",
+        "I'm actually quite healthly.",
+        "Do you have any interest that people might find unique or weird?",
+        [
+            {
+                "message": [
+                    "I would be willing to try it out, but I do love eggsss...",
+                    "While I love going out and being in nature, I like cleaning and working.",
+                    "My job is pretty good and a clean home is a happy home."
+                ],
+                "score": 10,
+                "response": [
+                    "[announcer][buzzer]Okay Sssnakesss! Move to Sssnake Number six.",
+                    "That'sss not odd at all! I'm right there with you.",
+                    "We have ssso much in common. I hope to sssee you around."
+                ]
+            },
+            {
+                "message": [
+                    "It's a particular lifestyle. I've never meet a vegetarian before. I couldn't do it.",
+                    "I have weekly practices with a handbell group. We play at the local Winter festival."
+                ],
+                "score": 2,
+                "response": [
+                    "[announcer][buzzer]Okay Sssnakesss! Move to Sssnake Number six.",
+                    "I hear that a lot. Don't worry about. And handbellsss? Ssso neat! Bye!"
+                ]
+            },
+            {
+                "message": "You weren't kidding about being straight forward... There's nothing weird about me at all.",
+                "score": -5,
+                "response": [
+                    "[announcer][buzzer]Okay Sssnakesss! Move to Sssnake Number six.",
+                    "Okie dokie. Later."
                 ]
             }
         ]
