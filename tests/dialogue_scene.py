@@ -23,8 +23,8 @@ table_tg = displayio.TileGrid(table_bmp, pixel_shader=table_palette,
                               y=graphics.display.height-table_bmp.height)  # move to bottom of display
 graphics.upper_group.append(table_tg)
 
-scene.player_name = "Test"
-scene.Level("02-max.json").start()
+scene.player_name = "Player"
+scene.DialogueScene("02-max.json").start()
 
 graphics.main_group.hidden = False
 

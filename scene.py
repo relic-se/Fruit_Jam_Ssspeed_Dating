@@ -102,7 +102,7 @@ class DialogueScene(Scene):
         self._dialogue = self._get_dialogue()
 
     def _get_dialogue(self) -> list:
-        raise NotImplementedError()
+        return self._data["dialogue"]
     
     @property
     def name(self) -> str:
@@ -154,9 +154,6 @@ class Intro(DialogueScene):
     def __init__(self):
         super().__init__("intro.json")
 
-    def _get_dialogue(self) -> list:
-        return self._data["dialogue"]
-
     def _do_dialog(self, item:str|list) -> None:
         if type(item) is str and item == "[enter_name]":
             engine.Keyboard(on_complete=self._next_dialog).play()
@@ -172,9 +169,6 @@ class Level(DialogueScene):
     def __init__(self, filename:str=None):
         super().__init__(filename if filename is not None else LEVELS[0])
         self._score = 0
-
-    def _get_dialogue(self) -> list:
-        return self._data["dialogue"]
 
     @property
     def score(self) -> int:
