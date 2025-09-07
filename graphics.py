@@ -242,9 +242,9 @@ class Heart(displayio.Group):
             ],
         ))
 
-class Key(displayio.Group):
+class Button(displayio.Group):
 
-    def __init__(self, text:str="", font:fontio.FontProtocol=FONT, size:int=16, border:int=1, color:int=COLOR_PINK, color_hover:int=COLOR_WHITE, background_color:int=COLOR_BLACK, **kwargs):
+    def __init__(self, text:str="", font:fontio.FontProtocol=FONT, width:int=16, height:int=16, border:int=1, color:int=COLOR_PINK, color_hover:int=COLOR_WHITE, background_color:int=COLOR_BLACK, **kwargs):
         super().__init__(**kwargs)
         
         self._color = color
@@ -255,7 +255,7 @@ class Key(displayio.Group):
         
         self._outline = vectorio.Rectangle(
             pixel_shader=self._outline_palette,
-            width=size, height=size,
+            width=width, height=height,
         )
         self.append(self._outline)
 
@@ -264,7 +264,7 @@ class Key(displayio.Group):
 
         self._background = vectorio.Rectangle(
             pixel_shader=self._background_palette,
-            width=size-border*2, height=size-border*2,
+            width=width-border*2, height=height-border*2,
             x=border, y=border,
         )
         self.append(self._background)
@@ -272,7 +272,7 @@ class Key(displayio.Group):
         self._label = Label(
             text=text, font=font, color=color,
             anchor_point=(.5, .5),
-            anchored_position=(size//2, size//2),
+            anchored_position=(width//2, height//2),
         )
         self.append(self._label)
     

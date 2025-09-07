@@ -25,8 +25,8 @@ def update() -> None:
     cursor_pos = graphics.get_cursor_pos(True)
     for event in events:
         event.update()
-        if cursor_pos is not None:
-            event.mousemove(*cursor_pos)
+        if cursor_pos is not None and event.mousemove(*cursor_pos):
+            break
 
 def mouseclick() -> None:
     global events
@@ -69,7 +69,7 @@ class Event:
     def update(self) -> None:
         pass
 
-    def mousemove(self, x:int, y:int) -> None:
+    def mousemove(self, x:int, y:int) -> bool:  # True = stop propagation
         pass
 
     def mouseclick(self, x:int, y:int) -> bool:  # True = stop propagation
@@ -146,11 +146,11 @@ class Entity(Event):
 
 class Fade(Entity):
 
-    def __init__(self, speed:int=2, reverse:bool=False, **kwargs):
+    def __init__(self, speed:int=2, reverse:bool=False, initial:int=0, **kwargs):
         super().__init__(parent=graphics.overlay_group, **kwargs)
         self._speed = speed
         self._reverse = reverse
-        self._index = 0
+        self._index = min(max(initial, 0), graphics.FADE_TILES-1)
         self._tg = displayio.TileGrid(
             bitmap=graphics.fade_bmp, pixel_shader=graphics.fade_palette,
             width=graphics.display.width//graphics.FADE_TILE_SIZE, height=graphics.display.height//graphics.FADE_TILE_SIZE,
@@ -564,8 +564,8 @@ class Keyboard(Entity):
         for y, row in enumerate(KEYBOARD_CHARS):
             row_width = len(row) * (size + gap) - gap
             for x, char in enumerate(row):
-                self._keys.append(graphics.Key(
-                    text=char, size=size,
+                self._keys.append(graphics.Button(
+                    text=char, width=size, height=size,
                     x=(graphics.display.width - row_width)//2 + x*(size + gap),
                     y=graphics.display.height - graphics.WINDOW_TILE_SIZE - keys_height + y*(size + gap),
                 ))
@@ -582,22 +582,22 @@ class Keyboard(Entity):
 
         mid_row_width = len(KEYBOARD_CHARS[1]) * (size + gap) - gap
 
-        self._upper = graphics.Key(
-            text="^", size=size,
+        self._upper = graphics.Button(
+            text="^", width=size, height=size,
             x=(graphics.display.width - mid_row_width)//2 - gap - size,
             y=graphics.display.height - graphics.WINDOW_TILE_SIZE - size*2 - gap,
         )
         self._group.append(self._upper)
 
-        self._back = graphics.Key(
-            text="<", size=size,
+        self._back = graphics.Button(
+            text="<", width=size, height=size,
             x=(graphics.display.width + mid_row_width)//2 + gap,
             y=graphics.display.height - graphics.WINDOW_TILE_SIZE - size*2 - gap,
         )
         self._group.append(self._back)
 
-        self._enter = graphics.Key(
-            text=">", size=size,
+        self._enter = graphics.Button(
+            text=">", width=size, height=size,
             x=graphics.display.width - graphics.WINDOW_TILE_SIZE - size,
             y=graphics.display.height - graphics.WINDOW_TILE_SIZE - size,
         )
@@ -668,6 +668,73 @@ class Keyboard(Entity):
         scene.player_name = self._text.text  # save name
         super().complete()
 
+class Prompt(Entity):
+
+    def __init__(self, text:str, options:list, margin:int=8, size:int=16, **kwargs):
+        super().__init__(parent=graphics.overlay_group, **kwargs)
+        
+        self._tg = displayio.TileGrid(
+            bitmap=graphics.fade_bmp, pixel_shader=graphics.fade_palette,
+            width=graphics.display.width//graphics.FADE_TILE_SIZE, height=graphics.display.height//graphics.FADE_TILE_SIZE,
+            tile_width=graphics.FADE_TILE_SIZE, tile_height=graphics.FADE_TILE_SIZE,
+            default_tile=graphics.FADE_TILES//2,
+        )
+        self._group.append(self._tg)
+
+        self._dialog = graphics.Dialog(text, force_width=True)
+        self._dialog.y = graphics.display.height - margin*2 - size - self._dialog.height
+        self._group.append(self._dialog)
+
+        self._buttons = []
+        width = self._dialog.width//len(options) - margin*(len(options) - 1)//len(options)
+        for i, option in enumerate(options):
+            button = graphics.Button(
+                text=option,
+                width=width, height=size,
+                y=graphics.display.height - margin - size,
+                x=self._dialog.x + (width + margin) * i,
+            )
+            self._buttons.append(button)
+            self._group.append(button)
+
+    def play(self) -> None:
+        global events
+        super().play()
+        # make sure we are front in the stack
+        if self in events:
+            events.remove(self)
+        events.insert(0, self)
+
+    def mousemove(self, x:int, y:int) -> None:
+        for button in self._buttons:
+            button.hover = button.contains(x, y)
+        return True  # always stop propagation
+
+    def mouseclick(self, x:int, y:int) -> bool:
+        for index, button in enumerate(self._buttons):
+            if button.contains(x, y):
+                self.select(index)
+        return True  # always stop propagation
+
+    def select(self, index:int = None) -> None:
+        if index is not None and 0 <= index < len(self._buttons):
+            self.complete(index)
+        
+    def complete(self, index:int = None) -> None:
+        self.stop()
+        if callable(self._on_complete):
+            self._on_complete(index)
+
+    def stop(self) -> None:
+        self._group.remove(self._tg)
+        del self._tg
+        self._group.remove(self._dialog)
+        del self._dialog
+        for button in self._buttons:
+            self._group.remove(button)
+        del self._buttons
+        super().stop()
+
 exit_entity = None
 class Exit(Entity):
 
@@ -701,24 +768,32 @@ class Exit(Entity):
         del self._tg
         super().stop()
 
-    def complete(self) -> None:
+    def complete(self, index:int=None) -> None:
         global events
-        super().complete()
 
-        # stop background music
-        sound.stop_music()
-        
-        # stop all events
-        while events:
-            events[-1].stop()
-        if scene.current_scene is not None:
-            scene.current_scene.stop()
+        if index is None:
+            Prompt(
+                text="Are you sure you would like to return to the title screen and lose your current progress?",
+                options=("Yes, please.", "No, keep playing!"),
+                on_complete=self.complete,
+            ).play()
+        elif index == 0:
+            super().complete()
+                
+            # stop background music
+            sound.stop_music()
+            
+            # stop all events
+            while events:
+                events[-1].stop()
+            if scene.current_scene is not None:
+                scene.current_scene.stop()
 
-        # reset level data
-        scene.reset()
-        
-        # fade back to title screen
-        Sequence(
-            Fade(reverse=True),
-            lambda: scene.Title().start(),
-        ).play()
+            # reset level data
+            scene.reset()
+            
+            # fade back to title screen
+            Sequence(
+                Fade(reverse=True, initial=graphics.FADE_TILES//2),
+                lambda: scene.Title().start(),
+            ).play()
