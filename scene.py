@@ -24,6 +24,14 @@ level_scores = [0] * len(LEVELS)
 
 player_name = ""
 
+def reset() -> None:
+    # reset level and scores
+    global level_index, player_name, level_scores
+    level_index = 0
+    for i in range(len(level_scores)):
+        level_scores[i] = 0
+    player_name = ""
+
 class Scene:
 
     def __init__(self):
@@ -41,10 +49,10 @@ class Scene:
             current_scene = None
 
     def complete(self) -> None:
-        self.stop()
+        self._next_scene()
 
     def _next_scene(self) -> None:
-        pass
+        self.stop()
 
 class Title(Scene):
 
@@ -60,7 +68,6 @@ class Title(Scene):
         ).play()
 
     def complete(self) -> None:
-        super().complete()
         sound.play_music()
         engine.Sequence(
             engine.Fade(),
@@ -69,6 +76,7 @@ class Title(Scene):
 
     def _next_scene(self) -> None:
         super()._next_scene()
+        engine.Exit().play()
         Intro().start()
 
 class DialogueScene(Scene):
@@ -128,14 +136,13 @@ class DialogueScene(Scene):
             engine.OptionDialog(item, shuffle=shuffle, on_complete=self._next_dialog).play()
 
     def complete(self) -> None:
-        super().complete()
         engine.Sequence(
             engine.Animator(target=self._tg, start=(SNAKE_X, SNAKE_Y-self._bitmap.height), end=(SNAKE_X, SNAKE_Y)),
             self._next_scene
         ).play()
     
-    def _next_scene(self) -> None:
-        super()._next_scene()
+    def stop(self) -> None:
+        super().stop()
         graphics.lower_group.remove(self._tg)
         del self._tg
         del self._bitmap
@@ -210,21 +217,14 @@ class Epilogue(DialogueScene):
                 self.complete
             ).play()
         else:
-            super().complete()
             engine.Sequence(
                 engine.Fade(reverse=True),
                 self._next_scene
             ).play()
 
     def _next_scene(self) -> None:
-        global level_scores, level_index, player_name
         super()._next_scene()
-
-        # reset level and scores
-        level_index = 0
-        for i in range(len(level_scores)):
-            level_scores[i] = 0
-        player_name = ""
-
-        # TODO: return to title
+        if engine.exit_entity is not None:
+            engine.exit_entity.stop()
+        reset()
         Title().start()

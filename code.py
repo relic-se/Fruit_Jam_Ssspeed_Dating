@@ -24,7 +24,6 @@ import engine
 import graphics
 import hardware
 import scene
-import sound
 
 # add background image
 bg_bmp, bg_palette = adafruit_imageload.load("bitmaps/bg.bmp")
@@ -49,10 +48,7 @@ ACTION_QUIT   = const(4)
 
 def do_action(action:int) -> None:
     global started
-    if action == ACTION_SELECT:
-        if engine.current_event is not None:
-            engine.current_event.select()
-    elif action == ACTION_QUIT:
+    if action == ACTION_QUIT:
         supervisor.reload()
 
 async def mouse_task() -> None:

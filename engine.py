@@ -18,18 +18,24 @@ import graphics
 import scene
 import sound
 
-current_event = None
+events = []
 
 def update() -> None:
-    if current_event is not None:
-        current_event.update()
-        if (pos := graphics.get_cursor_pos(True)) is not None:
-            current_event.mousemove(*pos)
+    global events
+    cursor_pos = graphics.get_cursor_pos(True)
+    for event in events:
+        event.update()
+        if cursor_pos is not None:
+            event.mousemove(*cursor_pos)
 
 def mouseclick() -> None:
+    global events
     sound.play_sfx(sound.SFX_CLICK)
-    if current_event is not None and (pos := graphics.get_cursor_pos()) is not None:
-        current_event.mouseclick(*pos)
+    pos = graphics.get_cursor_pos()
+    if pos is not None:
+        for event in events:
+            if event.mouseclick(*pos) is True:
+                break
 
 class Event:
 
@@ -50,14 +56,15 @@ class Event:
         self._on_complete = value
 
     def play(self) -> None:
-        global current_event
-        if current_event is not None:
-            current_event.stop()
+        global events
         self._active = True
-        current_event = self
+        events.append(self)
 
     def stop(self) -> None:
+        global events
         self._active = False
+        if self in events:
+            events.remove(self)
 
     def update(self) -> None:
         pass
@@ -65,17 +72,15 @@ class Event:
     def mousemove(self, x:int, y:int) -> None:
         pass
 
-    def mouseclick(self, x:int, y:int) -> None:
+    def mouseclick(self, x:int, y:int) -> bool:  # True = stop propagation
         self.select()
+        return True
 
     def select(self) -> None:
         self.complete()
         
     def complete(self) -> None:
-        global current_event
         self.stop()
-        if current_event is self:
-            current_event = None
         if callable(self._on_complete):
             self._on_complete()
 
@@ -133,11 +138,11 @@ class Entity(Event):
         if self._group not in self._parent:
             self._parent.append(self._group)
     
-    def complete(self) -> None:
+    def stop(self) -> None:
         if self._group in self._parent:
             self._parent.remove(self._group)
         del self._group
-        super().complete()
+        super().stop()
 
 class Fade(Entity):
 
@@ -171,13 +176,13 @@ class Fade(Entity):
         for x in range(self._tg.width):
             for y in range(self._tg.height):
                 self._tg[x, y] = index
-    
-    def complete(self) -> None:
+
+    def stop(self) -> None:
         if self._reverse:
             graphics.main_group.hidden = True
         self._group.remove(self._tg)
         del self._tg
-        super().complete()
+        super().stop()
 
 class Animator(Event):
 
@@ -263,10 +268,10 @@ class VoiceDialog(Entity):
         if self.voice_playing and not sound.is_voice_playing():
             self._next_voice()
 
-    def complete(self) -> None:
+    def stop(self) -> None:
         self._group.remove(self._dialog)
         del self._dialog
-        super().complete()
+        super().stop()
 
 class OptionDialog(Entity):
 
@@ -302,43 +307,46 @@ class OptionDialog(Entity):
         self._response_index = -1
 
     def mousemove(self, x:int, y:int) -> None:
-        for dialog in self._dialogs:
-            dialog.hover(dialog.contains(x, y))
+        if self._dialogs is not None:
+            for dialog in self._dialogs:
+                dialog.hover(dialog.contains(x, y))
 
-    def mouseclick(self, x:int, y:int) -> None:
-        for index, dialog in enumerate(self._dialogs):
-            if dialog.contains(x, y):
-                self.select(index)
-                break
+    def mouseclick(self, x:int, y:int) -> bool:
+        if self._dialogs is not None:
+            for index, dialog in enumerate(self._dialogs):
+                if dialog.contains(x, y):
+                    self.select(index)
+                    return True
 
     def select(self, index:int = None) -> None:
-        if index is None or index < 0 or index >= len(self._options):
-            return
-        
-        # hide dialog options
-        for dialog in self._dialogs:
-            self._group.remove(dialog)
+        if self._dialogs is not None and index is not None and 0 <= index < len(self._options):
+            option = self._options[index]
 
-        option = self._options[index]
-        if type(option) is dict:
+            # remove dialog options
+            for dialog in self._dialogs:
+                self._group.remove(dialog)
+            del self._dialogs
+            self._dialogs = None
 
-            if scene.current_scene is not None and hasattr(scene.current_scene, "score"):
-                scene.current_scene.score += option.get("score", 0)
+            if type(option) is dict:
 
-            if type(option.get("message")) is list:
-                self._extra = option.get("message")[1:]
+                if scene.current_scene is not None and hasattr(scene.current_scene, "score"):
+                    scene.current_scene.score += option.get("score", 0)
 
-            if type(option.get("response")) in (list, str):
-                self._response = option.get("response")
-                if type(self._response) is str:
-                    self._response = [self._response]
-        
-        if self._extra is not None:
-            self._next_extra_dialog()
-        elif self._response is not None:
-            self._next_response_dialog()
-        else:
-            self.complete()
+                if type(option.get("message")) is list:
+                    self._extra = option.get("message")[1:]
+
+                if type(option.get("response")) in (list, str):
+                    self._response = option.get("response")
+                    if type(self._response) is str:
+                        self._response = [self._response]
+            
+            if self._extra is not None:
+                self._next_extra_dialog()
+            elif self._response is not None:
+                self._next_response_dialog()
+            else:
+                self.complete()
 
     def _next_extra_dialog(self) -> None:
         self._extra_index += 1
@@ -361,15 +369,18 @@ class OptionDialog(Entity):
         else:
             VoiceDialog(
                 self._response[self._response_index],
-                title=(scene.current_scene.name if scene.current_scene is not None else ""),
+                title=(scene.current_scene.name if scene.current_scene is not None and hasattr(scene.current_scene, "name") else ""),
                 title_right=True,
                 voice=True,
                 on_complete=self._next_response_dialog,
             ).play()
-    
-    def complete(self) -> None:
-        del self._dialogs
-        super().complete()
+
+    def stop(self) -> None:
+        if self._dialogs is not None:
+            for dialog in self._dialogs:
+                self._group.remove(dialog)
+            del self._dialogs
+        super().stop()
 
 class Results(Entity):
 
@@ -505,18 +516,19 @@ class Title(Entity):
     def mouseclick(self, x:int, y:int) -> None:
         if label_contains(self._start_label, x, y):
             self.complete()
+            return True
         elif label_contains(self._quit_label, x, y):
             supervisor.reload()
 
     def select(self) -> None:
         pass
-    
-    def complete(self) -> None:
+
+    def stop(self) -> None:
         self._group.remove(self._start_label)
         del self._start_label
         self._group.remove(self._quit_label)
         del self._quit_label
-        super().complete()
+        super().stop()
 
 KEYBOARD_CHARS = (
     ("q", "w", "e", "r", "t", "y", "u", "i", "o", "p"),
@@ -620,11 +632,11 @@ class Keyboard(Entity):
                     self.upper = False
                 if self._enter.hidden:
                     self._enter.hidden = False
-                return
+                return True
         
         if self._upper.contains(x, y):
             self.upper = not self.upper
-            return
+            return True
 
         if self._back.contains(x, y):
             text = self._text.text
@@ -633,18 +645,16 @@ class Keyboard(Entity):
                 if not len(text):
                     self._enter.hidden = True
                 self._text.text = text
-            return
+            return True
 
         if not self._enter.hidden and self._enter.contains(x, y):
-            return self.complete()
+            self.complete()
+            return True
 
     def select(self) -> None:
         pass
-    
-    def complete(self) -> None:
-        # save name
-        scene.player_name = self._text.text
 
+    def stop(self) -> None:
         self._group.remove(self._keys)
         del self._keys
         for key in (self._upper, self._back, self._enter):
@@ -652,4 +662,62 @@ class Keyboard(Entity):
             del key
         self._group.remove(self._text)
         del self._text
+        super().stop()
+    
+    def complete(self) -> None:
+        scene.player_name = self._text.text  # save name
         super().complete()
+
+exit_entity = None
+class Exit(Entity):
+
+    def __init__(self, margin:int=4):
+        global exit_entity
+        if exit_entity is not None:
+            raise SystemError("An exit entity already exists")
+        exit_entity = self
+        
+        super().__init__(parent=graphics.upper_group)
+        bitmap, palette = adafruit_imageload.load("bitmaps/door.bmp")
+        palette.make_transparent(8)
+        self._tg = displayio.TileGrid(bitmap, pixel_shader=palette,
+                                    y=margin, x=graphics.display.width-margin-bitmap.height,
+                                    tile_width=bitmap.height, tile_height=bitmap.height)
+        self._group.append(self._tg)
+
+    def mousemove(self, x:int, y:int) -> None:
+        self._tg[0, 0] = int(self._tg.contains((x, y, 0)))
+        
+    def mouseclick(self, x:int, y:int) -> bool:
+        if self._tg.contains((x, y, 0)):
+            self.complete()
+            return True
+        
+    def stop(self) -> None:
+        global exit_entity
+        exit_entity = None
+        self._group.remove(self._tg)
+        del self._tg
+        super().stop()
+
+    def complete(self) -> None:
+        global events
+        super().complete()
+
+        # stop background music
+        sound.stop_music()
+        
+        # stop all events
+        while events:
+            events[-1].stop()
+        if scene.current_scene is not None:
+            scene.current_scene.stop()
+
+        # reset level data
+        scene.reset()
+        
+        # fade back to title screen
+        Sequence(
+            Fade(reverse=True),
+            lambda: scene.Title().start(),
+        ).play()
