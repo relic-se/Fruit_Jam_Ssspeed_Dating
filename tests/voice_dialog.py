@@ -5,12 +5,12 @@ import asyncio
 
 import engine
 import graphics
-import sound
 
-# load voice
-sound.load_voice("ozzie")
-
-engine.VoiceDialog(text="The quick brown fox jumps over the lazy dog. " * 3, title="Lorem Ipsum Dolor Sit Amet").play()
+engine.VoiceDialog(
+    text="The quick brown fox jumps over the lazy dog. " * 3,
+    title="Lorem Ipsum Dolor Sit Amet",
+    voice="ozzie",
+).play()
 
 graphics.main_group.hidden = False
 

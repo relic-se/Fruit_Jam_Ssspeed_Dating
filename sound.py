@@ -9,12 +9,24 @@ import adafruit_pathlib as pathlib
 
 import hardware
 
-VOICE = None
 DAC_PRESENT = hardware.peripherals.dac is not None
 
 # load sfx wave files
 SFX_CLICK = audiocore.WaveFile("sounds/click.wav") if DAC_PRESENT else None
 SFX_BUZZER = audiocore.WaveFile("sounds/buzzer.wav") if DAC_PRESENT else None
+
+# load voices
+VOICE = {}
+if DAC_PRESENT:
+    for dir_path in (x for x in pathlib.Path("sounds").iterdir() if x.is_dir()):
+        files = []
+        for file_path in (x for x in dir_path.iterdir() if x.is_file()):
+            if file_path.name.endswith(".wav"):
+                files.append(audiocore.WaveFile(file_path.absolute()))
+        if len(files):
+            VOICE[dir_path.name] = files
+        else:
+            del files
 
 def play_music(name:str="") -> None:
     if DAC_PRESENT:
@@ -31,33 +43,11 @@ def play_sfx(wave:audiocore.WaveFile) -> None:
     if DAC_PRESENT and wave is not None:
         hardware.mixer.play(wave, voice=1, loop=False)
 
-def play_voice() -> None:
-    if DAC_PRESENT and VOICE is not None:
-        wave = VOICE[random.randint(0, len(VOICE)-1)]
+def play_voice(name:str) -> None:
+    if DAC_PRESENT and len(name) and name in VOICE:
+        wave = VOICE[name][random.randint(0, len(VOICE[name])-1)]
         if wave is not None:
             hardware.mixer.play(wave, voice=2, loop=False)
-
-def load_voice(name:str) -> None:
-    global VOICE
-    if DAC_PRESENT:
-        unload_voice()
-        if len(name):
-            path = pathlib.Path("sounds/{:s}".format(name))
-            if path.exists():
-                VOICE = []
-                for filename in os.listdir(path.absolute()):
-                    if filename.endswith(".wav"):
-                        VOICE.append(audiocore.WaveFile((path / filename).absolute()))
-                if not len(VOICE):
-                    unload_voice()
-
-def unload_voice() -> None:
-    global VOICE
-    if DAC_PRESENT:
-        hardware.mixer.voice[2].stop()
-        if VOICE is not None:
-            del VOICE
-            VOICE = None
 
 def is_voice_playing() -> bool:
     if DAC_PRESENT:

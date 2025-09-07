@@ -97,9 +97,6 @@ class DialogueScene(Scene):
         else:
             self._tg = None
 
-        # load voice
-        sound.load_voice(self._data.get("voice", ""))
-
         # configure dialogue
         self._dialog_index = -1
         self._dialogue = self._get_dialogue()
@@ -110,6 +107,10 @@ class DialogueScene(Scene):
     @property
     def name(self) -> str:
         return self._data["name"]
+    
+    @property
+    def voice(self) -> str:
+        return self._data.get("voice", "")
 
     def start(self) -> None:
         super().start()

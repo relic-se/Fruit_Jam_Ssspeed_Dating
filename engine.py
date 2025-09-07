@@ -220,7 +220,8 @@ command_regex = re.compile("\[(\w+)\]")
 
 class VoiceDialog(Entity):
 
-    def __init__(self, text:str, voice:bool=True, on_complete:callable=None, **kwargs):
+    def __init__(self, text:str, voice:bool|str=True, on_complete:callable=None, **kwargs):
+        announcer = False
         while (command := command_regex.search(text)):
             replace = ""
             if command.group(1) == "name":
@@ -230,10 +231,27 @@ class VoiceDialog(Entity):
             elif command.group(1) == "quiet":
                 voice = False
                 kwargs["title"] = ""
+            elif command.group(1) == "player":
+                voice = False
+                kwargs["title"] = scene.player_name
+                kwargs["title_right"] = True
+            elif command.group(1) == "announcer":
+                voice = "blinka"
+                kwargs["title"] = "Blinka"
+                kwargs["title_right"] = True
+                announcer = True
             text = text[:command.start(0)] + replace + text[command.end(0):]
         text = text.strip()
 
         super().__init__(parent=graphics.upper_group, on_complete=on_complete)
+
+        if announcer:
+            bitmap, palette = adafruit_imageload.load("bitmaps/announcer.bmp")
+            palette.make_transparent(4)
+            self._group.append(displayio.TileGrid(
+                bitmap=bitmap, pixel_shader=palette,
+                x=8, y=8,
+            ))
 
         self._dialog = graphics.Dialog(text, **kwargs)
         self._group.append(self._dialog)
@@ -249,7 +267,10 @@ class VoiceDialog(Entity):
         ))
 
         # configure voice
-        self._voice = voice
+        if voice is True and scene.current_scene is not None and hasattr(scene.current_scene, "voice"):
+            self._voice = scene.current_scene.voice
+        else:
+            self._voice = voice if type(voice) is str else False
         self._voice_len = len(text) // 10
         self._voice_index = -1
         if voice:
@@ -258,11 +279,11 @@ class VoiceDialog(Entity):
     def _next_voice(self) -> None:
         if self.voice_playing:
             self._voice_index += 1
-            sound.play_voice()
+            sound.play_voice(self._voice)
 
     @property
     def voice_playing(self) -> bool:
-        return self._voice and self._voice_index < self._voice_len
+        return self._voice is not False and self._voice_index < self._voice_len
 
     def update(self) -> None:
         if self.voice_playing and not sound.is_voice_playing():

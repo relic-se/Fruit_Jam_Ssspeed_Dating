@@ -105,7 +105,7 @@
                 ],
                 "score": 10,
                 "response": [
-                    "[quiet][buzzer]Okay Sssnakesss! Move to Sssnake Number two.",
+                    "[announcer][buzzer]Okay Sssnakesss! Move to Sssnake Number two.",
                     "Yum! I would love to invite you next time.",
                     "[quiet]Ozzie says as they excitedly look back over their shoulder as they move to the next table."
                 ]
@@ -117,7 +117,7 @@
                 ],
                 "score": 2,
                 "response": [
-                    "[quiet][buzzer]Okay Sssnakesss! Move to Sssnake Number two.",
+                    "[announcer][buzzer]Okay Sssnakesss! Move to Sssnake Number two.",
                     "[quiet]Ozzie offers you a sad smile and says...",
                     "Nice meeting you!",
                     "[quiet]before moving to the next table..."
@@ -127,7 +127,7 @@
                 "message": "Pretty basssic.",
                 "score": -5,
                 "response": [
-                    "[quiet][buzzer]Okay Sssnakesss! Move to Sssnake Number two.",
+                    "[announcer][buzzer]Okay Sssnakesss! Move to Sssnake Number two.",
                     "[quiet]Ozzie looks relieved at the sound of the buzzer.",
                     "[quiet]They slither off to the next table."
                 ]
