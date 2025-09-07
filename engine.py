@@ -679,10 +679,11 @@ class Exit(Entity):
         
         super().__init__(parent=graphics.upper_group)
         bitmap, palette = adafruit_imageload.load("bitmaps/door.bmp")
-        palette.make_transparent(8)
-        self._tg = displayio.TileGrid(bitmap, pixel_shader=palette,
-                                    y=margin, x=graphics.display.width-margin-bitmap.height,
-                                    tile_width=bitmap.height, tile_height=bitmap.height)
+        self._tg = displayio.TileGrid(
+            bitmap=bitmap, pixel_shader=palette,
+            y=margin, x=graphics.display.width-margin-bitmap.width//2,
+            tile_width=bitmap.width//2, tile_height=bitmap.height,
+        )
         self._group.append(self._tg)
 
     def mousemove(self, x:int, y:int) -> None:
