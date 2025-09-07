@@ -4,32 +4,95 @@
     "bitmap_transparent": 2,
     "voice": "wren",
     "dialogue": [
-        "Hi, I'm Wren.",
-        "What bringsss you here tonight?",
+        "Well, well, look who we have here... you are a decadante treat for thessse eyesss.",
+        "You having much fun tonight?",
         [
             {
-                "message": "I love meeting new sssnakesss. It can be a wonderful challenge. I go to thessse thingsss all the time.",
+                "message": "I am now that you are here. You are too kind.",
                 "score": 10,
                 "response": [
-                    "I admire your sssocial gumption and posssitivity.",
-                    "Have you ever found a date at anyone one of thessse thingsss?"
+                    "I try to be honest when I can, and go on a healthy dossse of vacationsss, too.",
+                    "Ssspeaking of, have you gone anywhere exciting recently?"
                 ]
             },
             {
-                "message": "You're not here to find true love? I'm trying again.",
+                "message": "Mmmm, don't eat me!",
                 "score": 2,
                 "response": [
-                    "I don't really believe in true love or sssoulmatesss.",
-                    "Have you found a date at one of thessse thingsss?"
+                    "Oh honey, I couldn't. I'm on a no sugar diet to get in shape for my next vacation.",
+                    "Give me sssome insspo- have you gone anywhere exciting recently?"
                 ]
             },
             {
-                "message": "Well, obviousssly I'm here to find a date. If thisss time goesss well.",
+                "message": "*stutters to find response*",
                 "score": -5,
                 "response": [
-                    "That makesss sssenssse.",
-                    "Ssso have you ever even found a date at one of thessse thingsss?"
+                    "You're a ssshy one. Don't worry about it.",
+                    "You need to relax. Have you gone on a vaction recently?"
                 ]
+            }
+        ],
+        [
+            {
+                "message": [
+                    "You might be surprised, but I'm actually vissiting on vacay right now.",
+                    "Had a night free and wanted some drinks and fun."
+                ],
+                "score": 10
+            },
+            {
+                "message": [
+                    "I went to the waterpark lassst weekend. Doesss that count?",
+                    "Hmm, maybe I ssshould plan sssomething bigger sssoon."
+                ],
+                "score": 2
+            },
+            {
+                "message": "No. Travelling is ssscary. I'm happy here. Thisss isss a big city.",
+                "score": -5
+            }
+        ],
+        "You're a hoot, darling. I'm here working on set for the next \"Sssnakes on a Cruissse\" movie.",
+        "It'sss a sssmall role, but enough to pay for my trip to the issslandsss. I can't wait to be free again.",
+        "[player]I knew you looked familiar! I love that ssseriesss. Can I...?",
+        [
+            {
+                "message": [
+                    "...get a picture with you to ssshow my friendsss?",
+                    "We were just quoting \"Sssnakes on a Train\"."
+                ],
+                "score": 10
+            },
+            {
+                "message": "...get your autograph?",
+                "score": 2
+            },
+            {
+                "message": "...be excused. I have to go to the bathroom.",
+                "score": -5
+            }
+        ],
+        "Of course, beautiful!",
+        "[announcer][buzzer]Okay Sssnakesss! Move to Sssnake Number five!!",
+        "Oh ssshoot! Looks like we are out of time. Next time darling. This has been a pleasure.",
+        [
+            {
+                "message": [
+                    "It ssso hasss. Until next time. Ciao!",
+                    "[quiet]You kiss the air platonically as Wren leaves."
+                ],
+                "score": 10
+            },
+            {
+                "message": "*You wave ecstatically to Wren as they leave.*",
+                "score": 2
+            },
+            {
+                "message": [
+                    "*You embarassly smile...*",
+                    "[quiet]...accidently dripping venom from your fangs as Wren leaves."
+                ],
+                "score": -5
             }
         ]
     ],
