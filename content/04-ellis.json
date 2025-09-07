@@ -4,34 +4,78 @@
     "bitmap_transparent": 4,
     "voice": "ellis",
     "dialogue": [
-        "Hi, I'm Ellis.",
-        "What bringsss you here tonight?",
+        "Ellis sits and bashfully smiles at you.",
+        "[player]Hey friend! I'm [name]. How are you?.",
+        "Hello,! I'm Ellisss. It's been a whirwind and I'm afraid I'm already feeling the drain of it all.",
         [
             {
-                "message": "I love meeting new sssnakesss. It can be a wonderful challenge. I go to thessse thingsss all the time.",
-                "score": 10,
-                "response": [
-                    "I admire your sssocial gumption and posssitivity.",
-                    "Have you ever found a date at anyone one of thessse thingsss?"
-                ]
+                "message": [
+                    "I feel that. I haven't talked about myssself this much, and it' sss getting harder.",
+                    "Or maybe I found sssomeone that it'sss easssy to talk with just, yet.",
+                    "I'm working ont it."
+                ],
+                "score": 10
             },
             {
-                "message": "You're not here to find true love? I'm trying again.",
-                "score": 2,
-                "response": [
-                    "I don't really believe in true love or sssoulmatesss.",
-                    "Have you found a date at one of thessse thingsss?"
-                ]
+                "message": "Yeah, thessse thingsss might not be for you. Atleassst you tried it though.",
+                "score": 2
             },
             {
-                "message": "Well, obviousssly I'm here to find a date. If thisss time goesss well.",
-                "score": -5,
-                "response": [
-                    "That makesss sssenssse.",
-                    "Ssso have you ever even found a date at one of thessse thingsss?"
-                ]
+                "message": [
+                    "That'sss not good. It'll be over soon.",
+                    "Only two more chumsss to go and then we can all go home."
+                ],
+                "score": -5
             }
-        ]
+        ],
+        "Interesssting.",
+        [
+            {
+                "message": "You are.",
+                "score": 10
+            },
+            {
+                "message": "Huh?",
+                "score": 2
+            },
+            {
+                "message": "Are you okay?",
+                "score": -5
+            }
+        ],
+        "The ssstarsss aligned with the current weather pattern and time, made it ssseem like I wasss going to find my sssoulmate tonight.",
+        "I think I wasss wrong.",
+        [
+            {
+                "message": "There'sss ssstill time! Don't give up.",
+                "score": 10
+            },
+            {
+                "message": "You ssshouldn' blame yourssself. Try tarot reading next time, might help.",
+                "score": 2
+            },
+            {
+                "message": "That ssstuff is a load of balony anywaysss.",
+                "score": -5
+            }
+        ],
+        "Yeah, you're probably right.",
+        "[announcer][buzzer]Okay Sssnakesss! Move to Sssnake Number five!!",
+        [
+            {
+                "message": "Ssshoot, thessse roundsss can be fassst. Talk to you later if you want.",
+                "score": 10
+            },
+            {
+                "message": "Go get'em tiger",
+                "score": 2
+            },
+            {
+                "message": "Usually am.",
+                "score": -5
+            }
+        ],
+        "It's been cool chatting. Ssseee ya, either here or maybe well bump into each other at the library."
     ],
     "epilogue": [
         "It was nice talking to you",
