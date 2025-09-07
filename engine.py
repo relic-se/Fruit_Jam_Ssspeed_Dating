@@ -234,11 +234,11 @@ class VoiceDialog(Entity):
             elif command.group(1) == "player":
                 voice = False
                 kwargs["title"] = scene.player_name
-                kwargs["title_right"] = True
+                kwargs["title_right"] = False
             elif command.group(1) == "announcer":
                 voice = "blinka"
                 kwargs["title"] = "Blinka"
-                kwargs["title_right"] = True
+                kwargs["title_right"] = False
                 announcer = True
             text = text[:command.start(0)] + replace + text[command.end(0):]
         text = text.strip()
