@@ -312,7 +312,18 @@ class OptionDialog(Entity):
         self._dialogs = []
         for option in self._options:
             message = option if type(option) is str else option.get("message", "")
-            dialog = graphics.Dialog(message[0] if type(message) is list else message, force_width=True)
+            if type(message) is list:
+                message = message[0]
+
+            # handle commands
+            while (command := command_regex.search(message)):
+                replace = ""
+                if command.group(1) == "name":
+                    replace = scene.player_name
+                message = message[:command.start(0)] + replace + message[command.end(0):]
+            message = message.strip()
+
+            dialog = graphics.Dialog(message, force_width=True)
             self._dialogs.append(dialog)
             self._group.append(dialog)
         
