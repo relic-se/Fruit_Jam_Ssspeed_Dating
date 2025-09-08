@@ -187,10 +187,11 @@ class Level(DialogueScene):
 
 class Epilogue(DialogueScene):
 
-    def __init__(self):
-        # determine the highest scoring level
-        name = LEVELS[level_scores.index(max(level_scores))]
-        super().__init__(name)
+    def __init__(self, filename:str=None):
+        if filename is None:
+            # determine the highest scoring level
+            filename = LEVELS[level_scores.index(max(level_scores))]
+        super().__init__(filename)
         self._results = False
 
     def _get_dialogue(self) -> list:
