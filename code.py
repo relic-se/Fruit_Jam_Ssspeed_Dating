@@ -18,7 +18,7 @@ from terminalio import FONT
 import adafruit_imageload
 import adafruit_usb_host_mouse
 import asyncio
-import relic_usb_host_gamepad
+#import relic_usb_host_gamepad
 
 import engine
 import graphics
@@ -70,6 +70,7 @@ async def mouse_task() -> None:
             graphics.reset_cursor()
         await asyncio.sleep(1)
 
+"""
 async def gamepad_task() -> None:
     gamepad = relic_usb_host_gamepad.Gamepad()
     while True:
@@ -88,7 +89,9 @@ async def gamepad_task() -> None:
             await asyncio.sleep(1)
         else:
             await asyncio.sleep(1/30)
+"""
 
+"""
 async def keyboard_task() -> None:
     while True:
         # handle keyboard input
@@ -105,6 +108,7 @@ async def keyboard_task() -> None:
             elif key.lower() == "q":
                 do_action(ACTION_QUIT)
         await asyncio.sleep(1/30)
+"""
 
 async def buttons_task() -> None:
     while True:
@@ -124,8 +128,8 @@ async def engine_task() -> None:
 async def main():
     await asyncio.gather(
         asyncio.create_task(mouse_task()),
-        asyncio.create_task(gamepad_task()),
-        asyncio.create_task(keyboard_task()),
+        #asyncio.create_task(gamepad_task()),
+        #asyncio.create_task(keyboard_task()),
         asyncio.create_task(engine_task()),
         asyncio.create_task(buttons_task()),
     )
