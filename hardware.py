@@ -11,10 +11,15 @@ try:
 except ImportError:
     config = None
 
-peripherals = adafruit_fruitjam.peripherals.Peripherals(
-    sample_rate=11025,
-    bit_depth=8,
-)
+dac_config = {
+    "sample_rate": 11025,
+    "bit_depth": 8,
+}
+try:
+    peripherals = adafruit_fruitjam.peripherals.Peripherals(**dac_config)
+except TypeError:
+    peripherals = adafruit_fruitjam.peripherals.Peripherals()
+    peripherals._dac.configure_clocks(**dac_config)
 
 if config is not None:
     peripherals.audio_output = config.audio_output
