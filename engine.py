@@ -449,38 +449,38 @@ class Results(Entity):
         max_score, min_score = max(scene.level_scores), min(scene.level_scores)
         score_range = max_score - min_score
 
-        width = graphics.display.width//len(scene.LEVELS)
-        label_y = graphics.display.height - 16
-        bar_height = graphics.display.height//4
-        bar_width = 16
-        bar_y = graphics.display.height - 32
+        if score_range > 0:
+            width = graphics.display.width//len(scene.LEVELS)
+            label_y = graphics.display.height - 16
+            bar_height = graphics.display.height//4
+            bar_width = 16
+            bar_y = graphics.display.height - 32
 
-        for index, filename in enumerate(scene.LEVELS):
-            name = filename[len("00-"):-len(".json")]
-            with open("content/" + filename, "r") as f:
-                data = json.load(f)
-                name = data.get("name", name)
+            for index, filename in enumerate(scene.LEVELS):
+                name = filename[len("00-"):-len(".json")]
+                with open("content/" + filename, "r") as f:
+                    data = json.load(f)
+                    name = data.get("name", name)
 
-            score = scene.level_scores[index] - min_score
-            x = width * index + width // 2
+                score = scene.level_scores[index] - min_score
+                x = width * index + width // 2
 
-            label = Label(
-                font=FONT, text=(name[0].upper()+name[1:]),
-                anchor_point=(.5, .5),
-                anchored_position=(x, label_y),
-            )
-            self._group.append(label)
+                self._group.append(Label(
+                    font=FONT, text=(name[0].upper()+name[1:]),
+                    anchor_point=(.5, .5),
+                    anchored_position=(x, label_y),
+                ))
 
-            bar_palette = displayio.Palette(1)
-            bar_palette[0] = (min(0xff * (score_range - score) * 2 // score_range, 0xff) << 16) | (min(0xff * score * 2 // score_range, 0xff) << 8)
-            bar = vectorio.Rectangle(
-                pixel_shader=bar_palette,
-                width=bar_width,
-                height=max(bar_height * score // score_range, 2),
-                x=x-bar_width//2, y=bar_y,
-            )
-            bar.y -= bar.height
-            self._group.append(bar)
+                bar_palette = displayio.Palette(1)
+                bar_palette[0] = (min(0xff * (score_range - score) * 2 // score_range, 0xff) << 16) | (min(0xff * score * 2 // score_range, 0xff) << 8)
+                bar = vectorio.Rectangle(
+                    pixel_shader=bar_palette,
+                    width=bar_width,
+                    height=max(bar_height * score // score_range, 2),
+                    x=x-bar_width//2, y=bar_y,
+                )
+                bar.y -= bar.height
+                self._group.append(bar)
 
         # setup arrow indicator
         self._group.append(Label(
