@@ -537,6 +537,13 @@ class Title(Entity):
         )
         self._group.append(self._quit_label)
 
+        # credits text
+        self._group.append(Label(
+            font=FONT, text="a game by cooper & sam", color=0x666666,
+            anchor_point=(.5, 1),
+            anchored_position=(graphics.display.width//2, graphics.display.height-2),
+        ))
+
     def mousemove(self, x:int, y:int) -> None:
         for label in (self._start_label, self._quit_label):
             contains = label_contains(label, x, y)
