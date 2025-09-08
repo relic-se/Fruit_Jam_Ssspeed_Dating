@@ -20,11 +20,11 @@
                 "score": 2,
                 "response": [
                     "Well, that'sss a loaded question. I'd sssay yesss, but it'sss all about perssspective.",
-                    "Asss for tonight, I've been fighting, but I won't get upssset if I don't match up with anybody again."
+                    "Asss for tonight, I've been fighting, but I won't get upssset if I don't match up with anybody... again."
                 ]
             },
             {
-                "message": "[name]. You having an luck tonight?",
+                "message": "[name]. You having any luck tonight?",
                 "score": -5,
                 "response": [
                     "You need luck at thessse thingsss, buddy.",
@@ -77,7 +77,7 @@
                 "score": 2,
                 "response": [
                     "What a ssshame. I treasssure family above all. You take care of your mom, you hear.",
-                    "If it was one thing I learned from the military, it'sss loyality and family mattersss."
+                    "If it was one thing I learned from the military, it'sss loyalty and family mattersss."
                 ]
             },
             {
@@ -89,8 +89,8 @@
                 ]
             }
         ],
-        "[announcer][buzzer]Okay Sssnakesss! That's the end!! Let's tally up our snakes and pair with our matches",
-        "[quiet]Charlie grunts and slithers off towards Blinka to find out his match."
+        "[announcer][buzzer]Okay Sssnakesss! That's the end!! Feel free to continue mingling. Thanks for joining us today!",
+        "[quiet]Charlie grunts and slithers off towards Blinka to ask her a question."
     ],
     "epilogue": [
         "It was nice talking to you",

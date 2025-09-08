@@ -4,20 +4,20 @@
     "bitmap_transparent": 4,
     "voice": "ellis",
     "dialogue": [
-        "Ellis sits and bashfully smiles at you.",
+        "[quiet]Ellis sits and bashfully smiles at you.",
         "[player]Hey friend! I'm [name]. How are you?.",
-        "Hello,! I'm Ellisss. It's been a whirwind and I'm afraid I'm already feeling the drain of it all.",
+        "Hello! I'm Ellisss. It's been a whirlwind, and I'm afraid I'm already feeling the drain of it all.",
         [
             {
                 "message": [
                     "I feel that. I haven't talked about myssself this much, and it' sss getting harder.",
-                    "Or maybe I found sssomeone that it'sss easssy to talk with just, yet.",
-                    "I'm working ont it."
+                    "Or maybe I haven't found sssomeone that it'sss easssy to talk with just, yet.",
+                    "I'm working on it."
                 ],
                 "score": 10
             },
             {
-                "message": "Yeah, thessse thingsss might not be for you. Atleassst you tried it though.",
+                "message": "Yeah, thessse thingsss might not be for you. At leassst you tried it though.",
                 "score": 2
             },
             {
@@ -67,7 +67,7 @@
                 "score": 10
             },
             {
-                "message": "Go get'em tiger",
+                "message": "Go get 'em tiger",
                 "score": 2
             },
             {
@@ -75,7 +75,7 @@
                 "score": -5
             }
         ],
-        "It's been cool chatting. Ssseee ya, either here or maybe well bump into each other at the library."
+        "It's been cool chatting. Ssseee ya, either here or maybe we'll bump into each other at the library."
     ],
     "epilogue": [
         "It was nice talking to you",
