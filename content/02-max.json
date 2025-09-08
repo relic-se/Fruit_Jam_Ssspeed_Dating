@@ -65,7 +65,7 @@
         [
             {
                 "message": [
-                    "Have you played the new boardgame, 'Numbersss'?",
+                    "Have you played the new board game, \"Numbersss\"?",
                     "I think you would love it!"
                 ],
                 "score": 10,
@@ -118,7 +118,9 @@
         ]
     ],
     "epilogue": [
-        "You da besss",
-        "Wanna hang out?"
+        "Hi again, [name]. I thought we had a lot in common.",
+        "Would you be interested in chatting with me some other time? We can maybe solve puzzles or play some board gamesss.",
+        "[player]Sssure thing! I'd be up for a game of \"Numbersss\" with you and your friendsss if you'll have me.",
+        "Sssoundsss like a date. I'll be ssseeing you soon!"
     ]
 }

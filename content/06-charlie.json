@@ -93,7 +93,11 @@
         "[quiet]Charlie grunts and slithers off towards Blinka to ask her a question."
     ],
     "epilogue": [
-        "It was nice talking to you",
-        "Let's meet up again"
+        "[quiet]Charlie quickly comes back and stares at you straight in the face, looking deeply into your eyes.",
+        "Cadet, I think I've made a decisssion.",
+        "You and I? We will rendevousss at the checkpoint at 17:00 on the dot. We have a missssion to complete at the moviesss.",
+        "[player]Oh, sssure. I'm free tomorrow... not that you were asssking.",
+        "Thisss dangerousss missssion callsss for a healthy dossse of sssour candy and buttery popcorn. Those munchiesss aren't going to munch themssselvesss!",
+        "[quiet]You give a quiet chuckle as you continue to listen to Charlie go on and on about the cool action movie he is planning for you two to see."
     ]
 }

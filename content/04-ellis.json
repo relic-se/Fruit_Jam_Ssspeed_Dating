@@ -78,7 +78,10 @@
         "It's been cool chatting. Ssseee ya, either here or maybe we'll bump into each other at the library."
     ],
     "epilogue": [
-        "It was nice talking to you",
-        "Let's meet up again"
+        "Hey, [name]. Ssso, I thought you were kinda cool. You want to get sssome coffee or sssomething tomorrow?",
+        "Sssorry if that's lame or sssomething. But I think I sssee sssomething ssspecial in our future.",
+        "[player]That sssoundsss good, Ellisss. Our horossscopesss are well aligned.",
+        "[player]I'd love a cortado and a moussse bissscuit.",
+        "Fabulousss. I'll sssee you then."
     ]
 }

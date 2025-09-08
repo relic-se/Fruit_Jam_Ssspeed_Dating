@@ -87,7 +87,7 @@
             }
         ],
         "You might find it weird that I'm a vegetarian. I would never pressure my partner into it, but I don't want anyone to change me either.",
-        "I'm actually quite healthly.",
+        "I'm actually quite healthy.",
         "Do you have any interest that people might find unique or weird?",
         [
             {
@@ -125,7 +125,9 @@
         ]
     ],
     "epilogue": [
-        "It was nice talking to you",
-        "Let's meet up again"
+        "Hey there, [name]. I'm heading out to the trailsss later thisss evening to sssleep under the ssstarsss.",
+        "It ssshould be beautiful out there. Plusss, there'sss a great crag around the corner for sssport climbing the next day.",
+        "Would you like to join me on thisss adventure?",
+        "[player]Hmmm, I'll have to call in at work, but it sssoundsss worth it! I'll go grab my tent."
     ]
 }
