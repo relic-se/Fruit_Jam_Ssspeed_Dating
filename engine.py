@@ -916,7 +916,14 @@ class Exit(Entity):
             y=margin, x=graphics.display.width-margin-bitmap.width//2,
             tile_width=bitmap.width//2, tile_height=bitmap.height,
         )
+        self._tg.hidden = True
         self._group.append(self._tg)
+
+    def update(self) -> None:
+        if self._tg.hidden is True and graphics.cursor is not None:
+            self._tg.hidden = False
+        elif self._tg.hidden is False and graphics.cursor is None:
+            self._tg.hidden = True
 
     def mousemove(self, x:int, y:int) -> None:
         self._tg[0, 0] = int(self._tg.contains((x, y, 0)))
