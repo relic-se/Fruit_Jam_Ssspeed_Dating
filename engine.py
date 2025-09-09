@@ -49,6 +49,18 @@ def down() -> None:
         if event.down() is True:
             break
 
+def left() -> None:
+    global events
+    for event in events:
+        if event.left() is True:
+            break
+
+def right() -> None:
+    global events
+    for event in events:
+        if event.right() is True:
+            break
+
 def select() -> None:
     global events
     sound.play_sfx(sound.SFX_CLICK)
@@ -100,6 +112,12 @@ class Event:
     
     def down(self) -> bool:  # True = stop propagation
         pass
+    
+    def left(self) -> bool:  # True = stop propagation
+        return self.up()
+    
+    def right(self) -> bool:  # True = stop propagation
+        return self.down()
 
     def select(self) -> bool:
         self.complete()
@@ -664,8 +682,8 @@ class Title(Entity):
 
 KEYBOARD_CHARS = (
     ("q", "w", "e", "r", "t", "y", "u", "i", "o", "p"),
-    ("a", "s", "d", "f", "g", "h", "j", "k", "l"),
-    ("z", "x", "c", "v", "b", "n", "m"),
+    ("^", "a", "s", "d", "f", "g", "h", "j", "k", "l", "<"),
+    ("z", "x", "c", "v", "b", "n", "m", ">"),
 )
 
 class Keyboard(Entity):
@@ -691,8 +709,6 @@ class Keyboard(Entity):
         self._group.append(tg)
 
         self._keys = displayio.Group()
-        self._group.append(self._keys)
-
         for y, row in enumerate(KEYBOARD_CHARS):
             row_width = len(row) * (size + gap) - gap
             for x, char in enumerate(row):
@@ -701,6 +717,8 @@ class Keyboard(Entity):
                     x=(graphics.display.width - row_width)//2 + x*(size + gap),
                     y=graphics.display.height - graphics.WINDOW_TILE_SIZE - keys_height + y*(size + gap),
                 ))
+        self._keys[-1].hidden = True
+        self._group.append(self._keys)
 
         self._text = Label(
             font=FONT_TITLE, text="",
@@ -712,29 +730,7 @@ class Keyboard(Entity):
         )
         self._group.append(self._text)
 
-        mid_row_width = len(KEYBOARD_CHARS[1]) * (size + gap) - gap
-
-        self._upper = graphics.Button(
-            text="^", width=size, height=size,
-            x=(graphics.display.width - mid_row_width)//2 - gap - size,
-            y=graphics.display.height - graphics.WINDOW_TILE_SIZE - size*2 - gap,
-        )
-        self._group.append(self._upper)
-
-        self._back = graphics.Button(
-            text="<", width=size, height=size,
-            x=(graphics.display.width + mid_row_width)//2 + gap,
-            y=graphics.display.height - graphics.WINDOW_TILE_SIZE - size*2 - gap,
-        )
-        self._group.append(self._back)
-
-        self._enter = graphics.Button(
-            text=">", width=size, height=size,
-            x=graphics.display.width - graphics.WINDOW_TILE_SIZE - size,
-            y=graphics.display.height - graphics.WINDOW_TILE_SIZE - size,
-        )
-        self._enter.hidden = True
-        self._group.append(self._enter)
+        self._column, self._row = None, None
 
     @property
     def upper(self) -> bool:
@@ -755,59 +751,122 @@ class Keyboard(Entity):
                 self._text.text = self._text.text[:self._max_length]
             if self.upper:
                 self.upper = False
-            if self._enter.hidden:
-                self._enter.hidden = False
+            if self._keys[-1].hidden:
+                self._keys[-1].hidden = False
 
     def backspace(self) -> None:
         text = self._text.text
         if len(text):
             text = text[:len(text)-1]
-            if not len(text):
-                self._enter.hidden = True
+            if not len(text) and (self._column is None or self._row is None):
+                self._keys[-1].hidden = True
             self._text.text = text
+
+    def _handle_key(self, value:str) -> None:
+        if value == "^":
+            self.upper = not self.upper
+        elif value == "<":
+            self.backspace()
+        elif value == ">":
+            self.complete()
+        else:
+            self.append(value)
 
     def mousemove(self, x:int, y:int) -> None:
         for key in self._keys:
-            key.hover = key.contains(x, y)
-        for key in (self._upper, self._back, self._enter):
-            key.hover = key.contains(x, y)
+            contains = key.contains(x, y)
+            key.hover = contains
+            if contains:
+                self._column, self._row = None, None  # reset position
 
     def mouseclick(self, x:int, y:int) -> None:
         for key in self._keys:
             if key.contains(x, y):
-                self.append(key.text)
+                self._handle_key(key.text)
                 return True
+            
+    def _hover_selected(self) -> None:
+        if self._column is not None and self._row is not None:
+            # ensure that enter key is visible
+            if self._keys[-1].hidden:
+                self._keys[-1].hidden = False
+            i = 0
+            for y, row in enumerate(KEYBOARD_CHARS):
+                for x in range(len(row)):
+                    self._keys[i].hover = self._column == x and self._row == y
+                    i += 1
+
+    def _update_column(self, previous_row:int) -> None:
+        self._column += (len(KEYBOARD_CHARS[self._row]) - len(KEYBOARD_CHARS[previous_row])) // 2  # fix offset
+        self._column = min(max(self._column, 0), len(KEYBOARD_CHARS[self._row]))  # constrain to row
         
-        if self._upper.contains(x, y):
-            self.upper = not self.upper
-            return True
-
-        if self._back.contains(x, y):
-            self.backspace()
-            return True
-
-        if not self._enter.hidden and self._enter.contains(x, y):
-            self.complete()
-            return True
+    def up(self) -> bool:
+        if self._row is None or self._column is None:
+            self._row = len(KEYBOARD_CHARS) - 1
+            self._column = len(KEYBOARD_CHARS[self._row]) // 2
+        else:
+            previous_row = self._row
+            self._row = (self._row - 1) % len(KEYBOARD_CHARS)
+            self._update_column(previous_row)
+        self._hover_selected()
+        
+    def down(self) -> bool:
+        if self._row is None or self._column is None:
+            self._row = 0
+            self._column = len(KEYBOARD_CHARS[self._row]) // 2
+        else:
+            previous_row = self._row
+            self._row = (self._row + 1) % len(KEYBOARD_CHARS)
+            self._update_column(previous_row)
+        self._hover_selected()
+        
+    def left(self, wrap:bool=True) -> bool:
+        if self._row is None or self._column is None:
+            self._row = len(KEYBOARD_CHARS) // 2 if wrap else len(KEYBOARD_CHARS) - 1
+            self._column = len(KEYBOARD_CHARS[self._row]) - 1
+        elif wrap:
+            self._column = (self._column - 1) % len(KEYBOARD_CHARS[self._row])
+        else:
+            self._column -= 1
+            if self._column < 0:
+                self._row = (self._row - 1) % len(KEYBOARD_CHARS)
+                self._column = len(KEYBOARD_CHARS[self._row]) - 1
+        self._hover_selected()
+        
+    def right(self, wrap:bool=True) -> bool:
+        if self._row is None or self._column is None:
+            self._row = len(KEYBOARD_CHARS) // 2 if wrap else 0
+            self._column = 0
+        elif wrap:
+            self._column = (self._column + 1) % len(KEYBOARD_CHARS[self._row])
+        else:
+            self._column += 1
+            if self._column >= len(KEYBOARD_CHARS[self._row]):
+                self._row = (self._row + 1) % len(KEYBOARD_CHARS)
+                self._column = 0
+        self._hover_selected()
 
     def select(self) -> bool:
-        if not self._enter.hidden:
-            self.complete()
-            return True
-
+        if self._column is not None and self._row is not None:
+            i = 0
+            for y, row in enumerate(KEYBOARD_CHARS):
+                for x in range(len(row)):
+                    if self._column == x and self._row == y:
+                        self._handle_key(self._keys[i].text)
+                        return True
+                    i += 1
+                    
     def stop(self) -> None:
         self._group.remove(self._keys)
         del self._keys
-        for key in (self._upper, self._back, self._enter):
-            self._group.remove(key)
-            del key
         self._group.remove(self._text)
         del self._text
         super().stop()
     
     def complete(self) -> None:
-        scene.player_name = self._text.text  # save name
-        super().complete()
+        if len(self._text.text):
+            scene.player_name = self._text.text  # save name
+            super().complete()
 
 class Prompt(Entity):
 

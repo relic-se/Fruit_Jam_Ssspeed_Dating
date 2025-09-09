@@ -52,10 +52,14 @@ async def gamepad_task() -> None:
     gamepad = relic_usb_host_gamepad.Gamepad()
     while True:
         if gamepad.update():
-            if gamepad.buttons.UP.pressed or gamepad.buttons.JOYSTICK_UP.pressed or gamepad.buttons.LEFT.pressed or gamepad.buttons.JOYSTICK_LEFT.pressed:
+            if gamepad.buttons.UP.pressed or gamepad.buttons.JOYSTICK_UP.pressed:
                 engine.up()
-            elif gamepad.buttons.DOWN.pressed or gamepad.buttons.JOYSTICK_DOWN.pressed or gamepad.buttons.RIGHT.pressed or gamepad.buttons.JOYSTICK_RIGHT.pressed:
+            elif gamepad.buttons.DOWN.pressed or gamepad.buttons.JOYSTICK_DOWN.pressed:
                 engine.down()
+            elif gamepad.buttons.LEFT.pressed or gamepad.buttons.JOYSTICK_LEFT.pressed:
+                engine.left()
+            elif gamepad.buttons.RIGHT.pressed or gamepad.buttons.JOYSTICK_RIGHT.pressed:
+                engine.right()
             elif gamepad.buttons.A.pressed:
                 engine.select()
             elif gamepad.buttons.START.pressed or gamepad.buttons.SELECT.pressed or gamepad.buttons.HOME.pressed:
@@ -73,24 +77,26 @@ async def keyboard_task() -> None:
         # handle keyboard input
         while (c := supervisor.runtime.serial_bytes_available) > 0:
             key = sys.stdin.read(c)
-            if key == "\x1b[A" or key == "\x1b[D":  # up or left
-                engine.up()
-            elif key == "\x1b[B" or key == "\x1b[C":  # down or right
-                engine.down()
-            elif key == "\n" or key == " ":  # enter or space
-                engine.select()
-            elif key == "\x1b":  # escape
-                # activate exit prompt
-                if (event := engine.get_event(engine.Exit)) is not None:
+            if (event := engine.get_event(engine.Keyboard)) is not None:
+                if key == "\n" or key == " ":  # enter or space
                     event.complete()
-            elif key == "\x08":  # backspace
-                # delete character if keyboard is active
-                if (event := engine.get_event(engine.Keyboard)) is not None:
+                elif key == "\x08":  # backspace
                     event.backspace()
-            elif len(key) == 1 and key.isalpha():
-                # append character if keyboard is active
-                if (event := engine.get_event(engine.Keyboard)) is not None:
+                elif len(key) == 1 and key.isalpha():
                     event.append(key)
+            else:
+                if key == "\x1b[A" or key == "\x1b[D":  # up
+                    engine.up()
+                elif key == "\x1b[B" or key == "\x1b[C":  # down
+                    engine.down()
+                elif key == "\x1b[D":  # left
+                    engine.left()
+                elif key == "\x1b[C":  # right
+                    engine.right()
+                elif key == "\n" or key == " ":  # enter or space
+                    engine.select()
+            if key == "\x1b" and (event := engine.get_event(engine.Exit)) is not None:  # escape
+                event.complete()
         await asyncio.sleep(1/30)
 
 async def buttons_task() -> None:
@@ -100,9 +106,18 @@ async def buttons_task() -> None:
         for i, button in enumerate((hardware.peripherals.button1, hardware.peripherals.button2, hardware.peripherals.button3)):
             state |= int(button) << i
         diff = last_state ^ state
-        for i, action in enumerate((engine.select, engine.down, engine.up)):
-            if diff & (1 << i) and state & (1 << i):
-                action()
+
+        if (event := engine.get_event(engine.Keyboard)) is not None:
+            for i, action in enumerate((engine.select, event.left, event.right)):
+                if diff & (1 << i) and state & (1 << i):
+                    if i == 0:
+                        action()
+                    else:
+                        action(wrap=False)
+        else:
+            for i, action in enumerate((engine.select, engine.down, engine.up)):
+                if diff & (1 << i) and state & (1 << i):
+                    action()
         last_state = state
         await asyncio.sleep(0.1)
 
