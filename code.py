@@ -28,17 +28,6 @@ import scene
 # start title screen
 scene.Title().start()
 
-ACTION_SELECT = const(0)
-ACTION_UP     = const(1)
-ACTION_DOWN   = const(2)
-ACTION_PAUSE  = const(3)
-ACTION_QUIT   = const(4)
-
-def do_action(action:int) -> None:
-    global started
-    if action == ACTION_QUIT:
-        supervisor.reload()
-
 async def mouse_task() -> None:
     while True:
         if (mouse := adafruit_usb_host_mouse.find_and_init_boot_mouse("bitmaps/cursor.bmp")) is not None:
@@ -63,49 +52,58 @@ async def gamepad_task() -> None:
     gamepad = relic_usb_host_gamepad.Gamepad()
     while True:
         if gamepad.update():
-            if gamepad.buttons.UP.pressed or gamepad.buttons.JOYSTICK_UP.pressed:
-                do_action(ACTION_UP)
-            elif gamepad.buttons.DOWN.pressed or gamepad.buttons.JOYSTICK_DOWN.pressed:
-                do_action(ACTION_DOWN)
+            if gamepad.buttons.UP.pressed or gamepad.buttons.JOYSTICK_UP.pressed or gamepad.buttons.LEFT.pressed or gamepad.buttons.JOYSTICK_LEFT.pressed:
+                engine.up()
+            elif gamepad.buttons.DOWN.pressed or gamepad.buttons.JOYSTICK_DOWN.pressed or gamepad.buttons.RIGHT.pressed or gamepad.buttons.JOYSTICK_RIGHT.pressed:
+                engine.down()
             elif gamepad.buttons.A.pressed:
-                do_action(ACTION_SELECT)
-            elif gamepad.buttons.START.pressed:
-                do_action(ACTION_PAUSE)
-            elif gamepad.buttons.HOME.pressed:
-                do_action(ACTION_QUIT)
+                engine.select()
+            elif gamepad.buttons.START.pressed or gamepad.buttons.SELECT.pressed or gamepad.buttons.HOME.pressed:
+                # activate exit prompt
+                if (event := engine.get_event(engine.Exit)) is not None:
+                    event.complete()
         elif not gamepad.connected:
             await asyncio.sleep(1)
         else:
             await asyncio.sleep(1/30)
 """
 
-"""
 async def keyboard_task() -> None:
     while True:
         # handle keyboard input
         while (c := supervisor.runtime.serial_bytes_available) > 0:
             key = sys.stdin.read(c)
-            if key == "\x1b[A":  # up key
-                do_action(ACTION_UP)
-            elif key == "\x1b[B":  # down key
-                do_action(ACTION_DOWN)
-            elif key == "\n" or key.lower() == "z":  # enter
-                do_action(ACTION_SELECT)
+            if key == "\x1b[A" or key == "\x1b[D":  # up or left
+                engine.up()
+            elif key == "\x1b[B" or key == "\x1b[C":  # down or right
+                engine.down()
+            elif key == "\n" or key == " ":  # enter or space
+                engine.select()
             elif key == "\x1b":  # escape
-                do_action(ACTION_PAUSE)
-            elif key.lower() == "q":
-                do_action(ACTION_QUIT)
+                # activate exit prompt
+                if (event := engine.get_event(engine.Exit)) is not None:
+                    event.complete()
+            elif key == "\x08":  # backspace
+                # delete character if keyboard is active
+                if (event := engine.get_event(engine.Keyboard)) is not None:
+                    event.backspace()
+            elif len(key) == 1 and key.isalpha():
+                # append character if keyboard is active
+                if (event := engine.get_event(engine.Keyboard)) is not None:
+                    event.append(key)
         await asyncio.sleep(1/30)
-"""
 
 async def buttons_task() -> None:
+    last_state = 0
     while True:
-        if hardware.peripherals.button1:
-            do_action(ACTION_DOWN)
-        elif hardware.peripherals.button2:
-            do_action(ACTION_SELECT)
-        elif hardware.peripherals.button3:
-            do_action(ACTION_UP)
+        state = 0
+        for i, button in enumerate((hardware.peripherals.button1, hardware.peripherals.button2, hardware.peripherals.button3)):
+            state |= int(button) << i
+        diff = last_state ^ state
+        for i, action in enumerate((engine.select, engine.down, engine.up)):
+            if diff & (1 << i) and state & (1 << i):
+                action()
+        last_state = state
         await asyncio.sleep(0.1)
 
 async def engine_task() -> None:
@@ -117,7 +115,7 @@ async def main():
     await asyncio.gather(
         asyncio.create_task(mouse_task()),
         #asyncio.create_task(gamepad_task()),
-        #asyncio.create_task(keyboard_task()),
+        asyncio.create_task(keyboard_task()),
         asyncio.create_task(engine_task()),
         asyncio.create_task(buttons_task()),
     )

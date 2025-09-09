@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: GPLv3
 import asyncio
+import supervisor
+import sys
 
 import adafruit_usb_host_mouse
 
@@ -31,6 +33,23 @@ async def mouse_task() -> None:
             graphics.reset_cursor()
         await asyncio.sleep(1)
 
+async def keyboard_task() -> None:
+    while True:
+        # handle keyboard input
+        while (c := supervisor.runtime.serial_bytes_available) > 0:
+            key = sys.stdin.read(c)
+            if key == "\n" or key == " ":  # enter or space
+                engine.select()
+            elif key == "\x08":  # backspace
+                # delete character if keyboard is active
+                if (event := engine.get_event(engine.Keyboard)) is not None:
+                    event.backspace()
+            elif len(key) == 1 and key.isalpha():
+                # append character if keyboard is active
+                if (event := engine.get_event(engine.Keyboard)) is not None:
+                    event.append(key)
+        await asyncio.sleep(1/30)
+
 async def engine_task() -> None:
     while True:
         engine.update()
@@ -39,6 +58,7 @@ async def engine_task() -> None:
 async def main():
     await asyncio.gather(
         asyncio.create_task(mouse_task()),
+        asyncio.create_task(keyboard_task()),
         asyncio.create_task(engine_task())
     )
 

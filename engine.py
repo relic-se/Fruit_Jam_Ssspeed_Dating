@@ -37,6 +37,25 @@ def mouseclick() -> None:
             if event.mouseclick(*pos) is True:
                 break
 
+def up() -> None:
+    global events
+    for event in events:
+        if event.up() is True:
+            break
+
+def down() -> None:
+    global events
+    for event in events:
+        if event.down() is True:
+            break
+
+def select() -> None:
+    global events
+    sound.play_sfx(sound.SFX_CLICK)
+    for event in events:
+        if event.select() is True:
+            break
+
 class Event:
 
     def __init__(self, on_complete:callable=None):
@@ -75,14 +94,29 @@ class Event:
     def mouseclick(self, x:int, y:int) -> bool:  # True = stop propagation
         self.select()
         return True
+    
+    def up(self) -> bool:  # True = stop propagation
+        pass
+    
+    def down(self) -> bool:  # True = stop propagation
+        pass
 
-    def select(self) -> None:
+    def select(self) -> bool:
         self.complete()
         
     def complete(self) -> None:
         self.stop()
         if callable(self._on_complete):
             self._on_complete()
+
+def get_event(event_class) -> Event:
+    global events
+    for event in events:
+        if isinstance(event, event_class):
+            return event
+        
+def has_event(event_class) -> bool:
+    return get_event(event_class) is not None
 
 class Sequence:
     def __init__(self, *events):
@@ -338,10 +372,15 @@ class OptionDialog(Entity):
         self._response = None
         self._response_index = -1
 
-    def mousemove(self, x:int, y:int) -> None:
+        self._index = None
+
+    def mousemove(self, x:int, y:int) -> bool:
         if self._dialogs is not None:
             for dialog in self._dialogs:
-                dialog.hover(dialog.contains(x, y))
+                contains = dialog.contains(x, y)
+                dialog.hover(contains)
+                if contains:
+                    self._index = None  # reset keyboard control
 
     def mouseclick(self, x:int, y:int) -> bool:
         if self._dialogs is not None:
@@ -349,8 +388,26 @@ class OptionDialog(Entity):
                 if dialog.contains(x, y):
                     self.select(index)
                     return True
+                
+    def up(self) -> bool:
+        if self._index is None:
+            self._index = len(self._dialogs) - 1
+        else:
+            self._index = (self._index - 1) % len(self._dialogs)
+        for index, dialog in enumerate(self._dialogs):
+            dialog.hover(index == self._index)
 
-    def select(self, index:int = None) -> None:
+    def down(self) -> bool:
+        if self._index is None:
+            self._index = 0
+        else:
+            self._index = (self._index + 1) % len(self._dialogs)
+        for index, dialog in enumerate(self._dialogs):
+            dialog.hover(index == self._index)
+
+    def select(self, index:int = None) -> bool:
+        if index is None and self._index is not None:
+            index = self._index
         if self._dialogs is not None and index is not None and 0 <= index < len(self._options):
             option = self._options[index]
 
@@ -523,12 +580,16 @@ class Title(Entity):
             anchored_position=(graphics.display.width//2, graphics.display.height//2),
         ))
 
+        # menu labels
+        self._labels = []
+
         self._start_label = Label(
             font=FONT_TITLE, text="Play", color=graphics.COLOR_PINK,
             anchor_point=(.5, .5),
             anchored_position=(graphics.display.width//4, graphics.display.height*3//4),
         )
         self._group.append(self._start_label)
+        self._labels.append(self._start_label)
 
         self._quit_label = Label(
             font=FONT_TITLE, text="Quit", color=graphics.COLOR_PINK,
@@ -536,6 +597,7 @@ class Title(Entity):
             anchored_position=(graphics.display.width*3//4, graphics.display.height*3//4),
         )
         self._group.append(self._quit_label)
+        self._labels.append(self._quit_label)
 
         # credits text
         self._group.append(Label(
@@ -544,23 +606,54 @@ class Title(Entity):
             anchored_position=(graphics.display.width//2, graphics.display.height-2),
         ))
 
-    def mousemove(self, x:int, y:int) -> None:
-        for label in (self._start_label, self._quit_label):
-            contains = label_contains(label, x, y)
-            if label.color == graphics.COLOR_PINK and contains:
-                label.color = graphics.COLOR_WHITE
-            elif label.color == graphics.COLOR_WHITE and not contains:
-                label.color = graphics.COLOR_PINK
+        self._index = None
 
-    def mouseclick(self, x:int, y:int) -> None:
-        if label_contains(self._start_label, x, y):
+    def _label_hover(self, label:Label, contains:bool) -> None:
+        if label.color == graphics.COLOR_PINK and contains:
+            label.color = graphics.COLOR_WHITE
+        elif label.color == graphics.COLOR_WHITE and not contains:
+            label.color = graphics.COLOR_PINK
+
+    def _label_select(self, index:int) -> bool:
+        if index == 0:  # start
             self.complete()
             return True
-        elif label_contains(self._quit_label, x, y):
+        elif index == 1:  # quit
             supervisor.reload()
 
-    def select(self) -> None:
-        pass
+    def mousemove(self, x:int, y:int) -> None:
+        for label in self._labels:
+            contains = label_contains(label, x, y)
+            self._label_hover(label, contains)
+            if contains:
+                self._index = None  # reset keyboard position
+
+    def mouseclick(self, x:int, y:int) -> None:
+        for index, label in enumerate(self._labels):
+            if label_contains(label, x, y):
+                return self._label_select(index)
+
+    def up(self) -> bool:
+        if self._index is None:
+            self._index = len(self._labels) - 1
+        else:
+            self._index = (self._index - 1) % len(self._labels)
+        for index, label in enumerate(self._labels):
+            self._label_hover(label, self._index == index)
+
+    def down(self) -> bool:
+        if self._index is None:
+            self._index = 0
+        else:
+            self._index = (self._index + 1) % len(self._labels)
+        for index, label in enumerate(self._labels):
+            self._label_hover(label, self._index == index)
+
+    def select(self, index:int=None) -> bool:
+        if index is None and self._index is not None:
+            index = self._index
+        if index is not None:
+            return self._label_select(index)
 
     def stop(self) -> None:
         self._group.remove(self._start_label)
@@ -655,6 +748,24 @@ class Keyboard(Entity):
             else:
                 key.text = key.text.lower()
 
+    def append(self, value:str) -> None:
+        if value.isalpha():
+            self._text.text += value
+            if len(self._text.text) > self._max_length:
+                self._text.text = self._text.text[:self._max_length]
+            if self.upper:
+                self.upper = False
+            if self._enter.hidden:
+                self._enter.hidden = False
+
+    def backspace(self) -> None:
+        text = self._text.text
+        if len(text):
+            text = text[:len(text)-1]
+            if not len(text):
+                self._enter.hidden = True
+            self._text.text = text
+
     def mousemove(self, x:int, y:int) -> None:
         for key in self._keys:
             key.hover = key.contains(x, y)
@@ -664,13 +775,7 @@ class Keyboard(Entity):
     def mouseclick(self, x:int, y:int) -> None:
         for key in self._keys:
             if key.contains(x, y):
-                self._text.text += key.text
-                if len(self._text.text) > self._max_length:
-                    self._text.text = self._text.text[:self._max_length]
-                if self.upper:
-                    self.upper = False
-                if self._enter.hidden:
-                    self._enter.hidden = False
+                self.append(key.text)
                 return True
         
         if self._upper.contains(x, y):
@@ -678,20 +783,17 @@ class Keyboard(Entity):
             return True
 
         if self._back.contains(x, y):
-            text = self._text.text
-            if len(text):
-                text = text[:len(text)-1]
-                if not len(text):
-                    self._enter.hidden = True
-                self._text.text = text
+            self.backspace()
             return True
 
         if not self._enter.hidden and self._enter.contains(x, y):
             self.complete()
             return True
 
-    def select(self) -> None:
-        pass
+    def select(self) -> bool:
+        if not self._enter.hidden:
+            self.complete()
+            return True
 
     def stop(self) -> None:
         self._group.remove(self._keys)
@@ -736,6 +838,8 @@ class Prompt(Entity):
             self._buttons.append(button)
             self._group.append(button)
 
+        self._index = None
+
     def play(self) -> None:
         global events
         super().play()
@@ -746,16 +850,38 @@ class Prompt(Entity):
 
     def mousemove(self, x:int, y:int) -> None:
         for button in self._buttons:
-            button.hover = button.contains(x, y)
+            contains = button.contains(x, y)
+            button.hover = contains
+            if contains:
+                self._index = None  # reset keyboard position
         return True  # always stop propagation
 
     def mouseclick(self, x:int, y:int) -> bool:
         for index, button in enumerate(self._buttons):
             if button.contains(x, y):
                 self.select(index)
+                break
         return True  # always stop propagation
+    
+    def up(self) -> bool:
+        if self._index is None:
+            self._index = len(self._buttons) - 1
+        else:
+            self._index = (self._index - 1) % len(self._buttons)
+        for index, button in enumerate(self._buttons):
+            button.hover = index == self._index
 
-    def select(self, index:int = None) -> None:
+    def down(self) -> bool:
+        if self._index is None:
+            self._index = 0
+        else:
+            self._index = (self._index + 1) % len(self._buttons)
+        for index, button in enumerate(self._buttons):
+            button.hover = index == self._index
+
+    def select(self, index:int = None) -> bool:
+        if index is None and self._index is not None:
+            index = self._index
         if index is not None and 0 <= index < len(self._buttons):
             self.complete(index)
         
@@ -799,16 +925,16 @@ class Exit(Entity):
         if self._tg.contains((x, y, 0)):
             self.complete()
             return True
-        
-    def stop(self) -> None:
-        global exit_entity
-        exit_entity = None
-        self._group.remove(self._tg)
-        del self._tg
-        super().stop()
+
+    def select(self) -> bool:
+        pass
 
     def complete(self, index:int=None) -> None:
         global events
+
+        # Make sure we don't already have a prompt open
+        if has_event(Prompt):
+            return
 
         if index is None:
             Prompt(
@@ -836,3 +962,10 @@ class Exit(Entity):
                 Fade(reverse=True, initial=graphics.FADE_TILES//2),
                 lambda: scene.Title().start(),
             ).play()
+        
+    def stop(self) -> None:
+        global exit_entity
+        exit_entity = None
+        self._group.remove(self._tg)
+        del self._tg
+        super().stop()
