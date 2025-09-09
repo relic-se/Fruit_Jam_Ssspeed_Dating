@@ -5,6 +5,10 @@ Speed dating sim for snakes written in CircuitPython for the [Adafruit Fruit Jam
 |:--------------------------------------------------------------:|:-------------------------------------------------------------------------------:|
 | ![screenshot of the title screen](assets/screenshot-title.jpg) | ![screenshot of dialogue with the character ellis](assets/screenshot-ellis.jpg) |
 
+## Description
+
+Meet up with 6 unique characters during quick-fire speed dating rounds and do your best to charm the snake of your dreams.
+
 ## Controls
 
 Currently, the only method to control this game is with a USB mouse using the on-screen cursor. All actions are completed with a left click. Some events require that an object be hovered over and then clicked while others you can click anywhere on the screen to proceed.
