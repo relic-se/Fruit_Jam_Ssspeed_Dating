@@ -58,6 +58,20 @@ main_group.append(upper_group)
 overlay_group = displayio.Group()
 root_group.append(overlay_group)
 
+# add background image
+bg_bmp, bg_palette = adafruit_imageload.load("bitmaps/bg.bmp")
+lower_group.append(displayio.TileGrid(
+    bitmap=bg_bmp, pixel_shader=bg_palette,
+))
+
+# add table image
+table_bmp, table_palette = adafruit_imageload.load("bitmaps/table.bmp")
+table_palette.make_transparent(4)
+upper_group.append(displayio.TileGrid(
+    bitmap=table_bmp, pixel_shader=table_palette,
+    y=display.height-table_bmp.height,  # move to bottom of display
+))
+
 async def refresh() -> None:
     # update display if any changes were made
     display.refresh()

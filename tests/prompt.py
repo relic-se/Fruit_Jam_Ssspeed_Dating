@@ -10,11 +10,6 @@ import adafruit_usb_host_mouse
 import engine
 import graphics
 
-# add background image (to test fade)
-bg_bmp, bg_palette = adafruit_imageload.load("bitmaps/bg.bmp")
-bg_tg = displayio.TileGrid(bg_bmp, pixel_shader=bg_palette)
-graphics.lower_group.append(bg_tg)
-
 def prompt(selected:int=None) -> None:
     if selected is not None:
         print(selected)

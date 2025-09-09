@@ -1,10 +1,7 @@
 # SPDX-FileCopyrightText: 2025 Cooper Dalrymple (@relic-se)
 #
 # SPDX-License-Identifier: GPLv3
-import displayio
-
 import adafruit_bitmapsaver
-import adafruit_imageload
 import adafruit_pathlib as pathlib
 
 import graphics
@@ -16,18 +13,6 @@ import sound
 import random
 for i in range(len(scene.LEVELS)):
     scene.level_scores[i] = random.randint(-20, 40)
-
-# add background image
-bg_bmp, bg_palette = adafruit_imageload.load("bitmaps/bg.bmp")
-bg_tg = displayio.TileGrid(bg_bmp, pixel_shader=bg_palette)
-graphics.lower_group.append(bg_tg)
-
-# add table image
-table_bmp, table_palette = adafruit_imageload.load("bitmaps/table.bmp")
-table_palette.make_transparent(4)
-table_tg = displayio.TileGrid(table_bmp, pixel_shader=table_palette,
-                            y=graphics.display.height-table_bmp.height)  # move to bottom of display
-graphics.upper_group.append(table_tg)
 
 def take_screenshot() -> None:
     # stop background music, we don't need it

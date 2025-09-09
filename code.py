@@ -25,18 +25,6 @@ import graphics
 import hardware
 import scene
 
-# add background image
-bg_bmp, bg_palette = adafruit_imageload.load("bitmaps/bg.bmp")
-bg_tg = displayio.TileGrid(bg_bmp, pixel_shader=bg_palette)
-graphics.lower_group.append(bg_tg)
-
-# add table image
-table_bmp, table_palette = adafruit_imageload.load("bitmaps/table.bmp")
-table_palette.make_transparent(4)
-table_tg = displayio.TileGrid(table_bmp, pixel_shader=table_palette,
-                              y=graphics.display.height-table_bmp.height)  # move to bottom of display
-graphics.upper_group.append(table_tg)
-
 # start title screen
 scene.Title().start()
 
