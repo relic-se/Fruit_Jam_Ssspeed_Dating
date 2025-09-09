@@ -124,6 +124,12 @@ def main():
             for src_file in SRC_FILES:
                 shutil.copyfile(root_dir / src_file, bundle_dir / src_file, follow_symlinks=False)
 
+            # add fonts bundle to circup
+            circup_cli(
+                ["bundle-add", "adafruit/circuitpython-fonts"],
+                standalone_mode=False,
+            )
+
             # install required libs
             shutil.copyfile(build_dir / "boot_out.txt", bundle_dir / "boot_out.txt")
             replace_tags(bundle_dir / "boot_out.txt", {

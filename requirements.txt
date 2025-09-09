@@ -5,4 +5,3 @@ adafruit_pathlib
 adafruit_usb_host_mouse
 asyncio
 font_knewave_webfont_24
-relic_usb_host_gamepad
