@@ -22,7 +22,10 @@ if DAC_PRESENT:
         files = []
         for file_path in (x for x in dir_path.iterdir() if x.is_file()):
             if file_path.name.endswith(".wav"):
-                files.append(audiocore.WaveFile(file_path.absolute()))
+                try:
+                    files.append(audiocore.WaveFile(file_path.absolute()))
+                except ValueError:
+                    pass
         if len(files):
             VOICE[dir_path.name] = files
         else:
