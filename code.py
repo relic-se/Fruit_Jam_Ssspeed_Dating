@@ -108,7 +108,7 @@ async def buttons_task() -> None:
         diff = last_state ^ state
 
         if (event := engine.get_event(engine.Keyboard)) is not None:
-            for i, action in enumerate((engine.select, event.left, event.right)):
+            for i, action in enumerate((engine.select, event.right, event.left)):
                 if diff & (1 << i) and state & (1 << i):
                     if i == 0:
                         action()
