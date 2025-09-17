@@ -514,11 +514,14 @@ class Results(Entity):
         self._group.append(tg)
 
         # setup title label
-        self._group.append(Label(
-            font=FONT_TITLE, text="Thanks for Playing!",
-            anchor_point=(.5, .5),
-            anchored_position=(graphics.display.width//2, graphics.display.height//4),
-        ))
+        for i in range(2):  # 0=shadow, 1=top
+            offset = (1 - i) * 2
+            self._group.append(Label(
+                font=FONT_TITLE, text="Thanks for Playing!",
+                color=0xffffff * i,
+                anchor_point=(.5, .5),
+                anchored_position=(graphics.display.width//2+offset, graphics.display.height//4+offset),
+            ))
 
         # setup level graphs
         max_score, min_score = max(scene.level_scores), min(scene.level_scores)
