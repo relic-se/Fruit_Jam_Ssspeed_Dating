@@ -35,21 +35,21 @@
         [
             {
                 "message": [
-                    "You mention your past love life and what you've learned from it.",
+                    "*You mention your past love life and what you've learned from it.*",
                     "[quiet]You agree this is fun, with no rights or wrongs when it's just yourssself being you."
                 ],
                 "score": 10
             },
             {
                 "message": [
-                    "You go into a philosophical rant on morality and the current politcal climate.",
+                    "*You go into a philosophical rant on morality and the current politcal climate.*",
                     "[quiet]Charlie seems very up-to-date with news and agrees with you a little bit."
                 ],
                 "score": 2
             },
             {
                 "message": [
-                    "You look around and nod trying to pass the time.",
+                    "*You look around and nod trying to pass the time.*",
                     "[quiet]You ask about what they did before this."
                 ],
                 "score": -5
