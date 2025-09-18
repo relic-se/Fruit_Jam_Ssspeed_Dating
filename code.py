@@ -9,16 +9,12 @@ if len(__file__.split("/")[:-1]) > 1:
         import sys
         sys.path.append(str(modules_directory.absolute()))
 
-import displayio
-from micropython import const
 import sys
 import supervisor
-from terminalio import FONT
 
-import adafruit_imageload
 import adafruit_usb_host_mouse
 import asyncio
-#import relic_usb_host_gamepad
+import relic_usb_host_gamepad
 
 import engine
 import graphics
@@ -47,30 +43,28 @@ async def mouse_task() -> None:
             graphics.reset_cursor()
         await asyncio.sleep(1)
 
-"""
+gamepad = relic_usb_host_gamepad.Gamepad()
 async def gamepad_task() -> None:
-    gamepad = relic_usb_host_gamepad.Gamepad()
+    global gamepad
     while True:
         if gamepad.update():
-            if gamepad.buttons.UP.pressed or gamepad.buttons.JOYSTICK_UP.pressed:
-                engine.up()
-            elif gamepad.buttons.DOWN.pressed or gamepad.buttons.JOYSTICK_DOWN.pressed:
-                engine.down()
-            elif gamepad.buttons.LEFT.pressed or gamepad.buttons.JOYSTICK_LEFT.pressed:
-                engine.left()
-            elif gamepad.buttons.RIGHT.pressed or gamepad.buttons.JOYSTICK_RIGHT.pressed:
-                engine.right()
-            elif gamepad.buttons.A.pressed:
-                engine.select()
-            elif gamepad.buttons.START.pressed or gamepad.buttons.SELECT.pressed or gamepad.buttons.HOME.pressed:
-                # activate exit prompt
-                if (event := engine.get_event(engine.Exit)) is not None:
-                    event.complete()
-        elif not gamepad.connected:
-            await asyncio.sleep(1)
-        else:
-            await asyncio.sleep(1/30)
-"""
+            for event in gamepad.events:
+                if event.pressed:
+                    if event.key_number in (relic_usb_host_gamepad.BUTTON_UP, relic_usb_host_gamepad.BUTTON_JOYSTICK_UP):
+                        engine.up()
+                    elif event.key_number in (relic_usb_host_gamepad.BUTTON_DOWN, relic_usb_host_gamepad.BUTTON_JOYSTICK_DOWN):
+                        engine.down()
+                    elif event.key_number in (relic_usb_host_gamepad.BUTTON_LEFT, relic_usb_host_gamepad.BUTTON_JOYSTICK_LEFT):
+                        engine.left()
+                    elif event.key_number in (relic_usb_host_gamepad.BUTTON_RIGHT, relic_usb_host_gamepad.BUTTON_JOYSTICK_RIGHT):
+                        engine.right()
+                    elif event.key_number == relic_usb_host_gamepad.BUTTON_A:
+                        engine.select()
+                    elif event.key_number in (relic_usb_host_gamepad.BUTTON_START, relic_usb_host_gamepad.BUTTON_SELECT, relic_usb_host_gamepad.BUTTON_HOME):
+                        # activate exit prompt
+                        if (event := engine.get_event(engine.Exit)) is not None:
+                            event.complete()
+        await asyncio.sleep(1/30 if gamepad.connected else 1)
 
 async def keyboard_task() -> None:
     while True:
@@ -129,10 +123,15 @@ async def engine_task() -> None:
 async def main():
     await asyncio.gather(
         asyncio.create_task(mouse_task()),
-        #asyncio.create_task(gamepad_task()),
+        asyncio.create_task(gamepad_task()),
         asyncio.create_task(keyboard_task()),
         asyncio.create_task(engine_task()),
         asyncio.create_task(buttons_task()),
     )
 
-asyncio.run(main())
+try:
+    asyncio.run(main())
+except KeyboardInterrupt:
+    gamepad.disconnect()
+    hardware.peripherals.deinit()
+    raise KeyboardInterrupt
