@@ -15,6 +15,8 @@ You can control all aspects of this application using a USB mouse to control the
 
 In order to exit while playing the game, click the door icon in the top right corner. This will bring up a confirmation prompt which will return you back to the title screen. At this point, you can reload the device by clicking the "Quit" option on the title screen. If the application is installed within [Fruit Jam OS](https://github.com/adafruit/Fruit-Jam-OS), it will return to the main menu of the operating system.
 
+This feature is supported using the `adafruit_usb_host_mouse`. Read the [documentation](https://docs.circuitpython.org/projects/usb_host_mouse/en/latest/) for more information.
+
 ### Keyboard
 A standard USB keyboard or REPL prompt can be used to control all aspects of this application.
 
@@ -34,6 +36,15 @@ The 3 buttons on the Fruit Jam device can be used for basic control of this appl
 | Button #1 | Select highlighted item or continue to next dialog |
 | Button #2 | Navigate down menus and dialog options             |
 | Button #3 | Navigate up menus and dialog options               |
+
+### Gamepad
+Many USB gamepad devices are supported using the `relic_usb_host_gamepad` library. This application can be fully controlled following the button mapping table below. See the [documentation](https://circuitpython-usb-host-gamepad.readthedocs.io/en/latest/) for a list of supported devices.
+
+| Button                | Action                                             |
+|-----------------------|----------------------------------------------------|
+| D-pad & Left Joystick | Navigate menus and dialog options                  |
+| A (or X on DS4)       | Select highlighted item or continue to next dialog |
+| Start, Select, Home   | Open exit prompt to return to title screen         |
 
 ## Credits
 
