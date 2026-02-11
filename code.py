@@ -86,7 +86,11 @@ async def mouse_task() -> None:
                 graphics.reset_cursor()
             await asyncio.sleep(1)
 
-gamepad = Gamepad()
+try:
+    gamepad = Gamepad()
+except (ValueError, NotImplementedError):
+    gamepad = None
+
 async def gamepad_task() -> None:
     global gamepad
     while True:
@@ -185,10 +189,11 @@ async def engine_task() -> None:
 async def main():
     tasks = [
         asyncio.create_task(mouse_task()),
-        asyncio.create_task(gamepad_task()),
         asyncio.create_task(keyboard_task()),
         asyncio.create_task(engine_task()),
     ]
+    if gamepad:
+        tasks.append(asyncio.create_task(gamepad_task()))
     if not BLINKA:
         tasks.append(asyncio.create_task(buttons_task()))
     await asyncio.gather(*tasks)
