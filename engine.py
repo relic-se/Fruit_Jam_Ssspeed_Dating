@@ -10,13 +10,16 @@ import supervisor
 from terminalio import FONT
 import vectorio
 
+from adafruit_bitmap_font import bitmap_font
 from adafruit_display_text.label import Label
 import adafruit_imageload
-from font_knewave_webfont_24 import FONT as FONT_TITLE
 
 import graphics
 import scene
 import sound
+
+
+FONT_TITLE = bitmap_font.load_font("fonts/knewave-24.pcf")
 
 events = []
 
