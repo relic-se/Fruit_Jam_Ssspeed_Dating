@@ -4,17 +4,25 @@
 import displayio
 import fontio
 import math
-import supervisor
 from terminalio import FONT
 import vectorio
 
 from adafruit_display_text.label import Label
 from adafruit_display_text.text_box import TextBox
-from adafruit_fruitjam.peripherals import request_display_config
 import adafruit_imageload
 import asyncio
 
-displayio.release_displays()
+try:
+    import supervisor
+except ImportError:
+    from blinka_displayio_pygamedisplay import PyGameDisplay
+    BLINKA = True
+else:
+    from adafruit_fruitjam.peripherals import request_display_config
+    BLINKA = False
+
+if not BLINKA:
+    displayio.release_displays()
 
 COLOR_WHITE = 0xffffff
 COLOR_PINK  = 0xffb6de
@@ -34,8 +42,14 @@ def copy_palette(palette:displayio.Palette) -> displayio.Palette:
     return clone
 
 # setup display
-request_display_config(320, 240)
-display = supervisor.runtime.display
+if BLINKA:
+    display = PyGameDisplay(
+        width=320, height=240,  # default display size
+        icon="icon.bmp", caption="Ssspeed Dating",
+    )
+else:
+    request_display_config(320, 240)
+    display = supervisor.runtime.display
 display.auto_refresh = False
 
 # create root group

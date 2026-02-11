@@ -1,15 +1,20 @@
 # SPDX-FileCopyrightText: 2025 Cooper Dalrymple (@relic-se)
 #
 # SPDX-License-Identifier: GPLv3
-import audiocore
-import os
 import random
-
-import adafruit_pathlib as pathlib
 
 import hardware
 
-DAC_PRESENT = hardware.peripherals.dac is not None
+try:
+    import supervisor
+except ImportError:
+    BLINKA = True
+else:
+    import audiocore
+    import adafruit_pathlib as pathlib
+    BLINKA = False
+
+DAC_PRESENT = not BLINKA and hardware.peripherals.dac is not None
 
 # load sfx wave files
 SFX_CLICK = audiocore.WaveFile("sounds/click.wav") if DAC_PRESENT else None

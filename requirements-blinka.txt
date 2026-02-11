@@ -1,0 +1,10 @@
+adafruit-blinka
+adafruit-blinka-displayio
+adafruit-circuitpython-asyncio
+adafruit-circuitpython-bitmap-font
+adafruit-circuitpython-display-text
+adafruit-circuitpython-imageload
+adafruit-circuitpython-usb-host-mouse
+blinka-displayio-pygamedisplay
+circuitpython-usb-host-gamepad
+pathlib

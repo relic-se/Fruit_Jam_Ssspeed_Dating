@@ -6,7 +6,6 @@ import fontio
 import json
 import random
 import re
-import supervisor
 from terminalio import FONT
 import vectorio
 
@@ -18,6 +17,12 @@ import graphics
 import scene
 import sound
 
+try:
+    import supervisor
+except ImportError:
+    BLINKA = True
+else:
+    BLINKA = False
 
 FONT_TITLE = bitmap_font.load_font("fonts/knewave-24.pcf")
 
@@ -643,7 +648,10 @@ class Title(Entity):
             self.complete()
             return True
         elif index == 1:  # quit
-            supervisor.reload()
+            if BLINKA:
+                exit()
+            else:
+                supervisor.reload()
 
     def mousemove(self, x:int, y:int) -> None:
         for label in self._labels:
