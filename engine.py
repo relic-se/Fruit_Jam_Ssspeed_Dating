@@ -649,7 +649,7 @@ class Title(Entity):
             return True
         elif index == 1:  # quit
             if BLINKA:
-                exit()
+                pygame.quit()
             else:
                 supervisor.reload()
 

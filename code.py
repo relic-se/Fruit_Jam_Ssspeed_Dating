@@ -43,6 +43,8 @@ else:
     import adafruit_usb_host_mouse
     BLINKA = False
 
+has_quit = False
+
 # start title screen
 scene.Title().start()
 
@@ -93,7 +95,7 @@ except (ValueError, NotImplementedError):
 
 async def gamepad_task() -> None:
     global gamepad
-    while True:
+    while not has_quit:
         if gamepad.update():
             for event in gamepad.events:
                 if event.pressed:
@@ -137,7 +139,7 @@ async def keyboard_task() -> None:
         if key == "\x1b" and (event := engine.get_event(engine.Exit)) is not None:  # escape
             event.complete()
     
-    while True:
+    while not has_quit:
         # handle keyboard input
         if BLINKA:
             for event in pygame.event.get(eventtype=(pygame.KEYDOWN,)):
@@ -180,9 +182,11 @@ async def buttons_task() -> None:
         await asyncio.sleep(0.1)
 
 async def engine_task() -> None:
+    global has_quit
     while True:
         if BLINKA and graphics.display.check_quit():
-            exit()
+            has_quit = True
+            break
         engine.update()
         await graphics.refresh()
 
@@ -204,4 +208,7 @@ except KeyboardInterrupt:
     gamepad.disconnect()
     if not BLINKA:
         hardware.peripherals.deinit()
-    raise KeyboardInterrupt
+        raise KeyboardInterrupt
+
+if BLINKA:
+    sys.exit()
