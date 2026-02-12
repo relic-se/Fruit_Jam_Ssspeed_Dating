@@ -43,9 +43,11 @@ def copy_palette(palette:displayio.Palette) -> displayio.Palette:
 
 # setup display
 if BLINKA:
+    import pygame
     display = PyGameDisplay(
         width=320, height=240,  # default display size
         icon="icon.bmp", caption="Ssspeed Dating",
+        flags=pygame.SCALED,
     )
 else:
     request_display_config(320, 240)
