@@ -55,7 +55,7 @@ async def mouse_task() -> None:
         mouse_palette.make_transparent(0)
         mouse_tg = TileGrid(
             bitmap=mouse_bitmap, pixel_shader=mouse_palette,
-            x=graphics.display.width//2, y=graphics.display.height//2,
+            x=graphics.DISPLAY_WIDTH//2, y=graphics.DISPLAY_HEIGHT//2,
         )
         graphics.set_cursor(mouse_tg)
 

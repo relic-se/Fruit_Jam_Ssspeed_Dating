@@ -12,6 +12,9 @@ from adafruit_display_text.text_box import TextBox
 import adafruit_imageload
 import asyncio
 
+DISPLAY_WIDTH = 320
+DISPLAY_HEIGHT = 240
+
 try:
     import supervisor
 except ImportError:
@@ -45,12 +48,12 @@ def copy_palette(palette:displayio.Palette) -> displayio.Palette:
 if BLINKA:
     import pygame
     display = PyGameDisplay(
-        width=320, height=240,  # default display size
+        width=DISPLAY_WIDTH, height=DISPLAY_HEIGHT,  # default display size
         icon="icon.bmp", caption="Ssspeed Dating",
         flags=pygame.SCALED,
     )
 else:
-    request_display_config(320, 240)
+    request_display_config(DISPLAY_WIDTH, DISPLAY_HEIGHT)
     display = supervisor.runtime.display
 display.auto_refresh = False
 
@@ -85,7 +88,7 @@ table_bmp, table_palette = adafruit_imageload.load("bitmaps/table.bmp")
 table_palette.make_transparent(4)
 upper_group.append(displayio.TileGrid(
     bitmap=table_bmp, pixel_shader=table_palette,
-    y=display.height-table_bmp.height,  # move to bottom of display
+    y=DISPLAY_HEIGHT-table_bmp.height,  # move to bottom of display
 ))
 
 async def refresh() -> None:
@@ -113,8 +116,8 @@ def set_cursor(tilegrid:displayio.TileGrid) -> None:
     if cursor is not None:
         reset_cursor()
     cursor = tilegrid
-    cursor.x = display.width // 2
-    cursor.y = display.height // 2
+    cursor.x = DISPLAY_WIDTH // 2
+    cursor.y = DISPLAY_HEIGHT // 2
     root_group.append(cursor)
 
 def reset_cursor():
@@ -132,7 +135,7 @@ def get_cursor_pos(moved:bool = False) -> tuple:
                 last_cursor_pos = cursor_pos
             return cursor_pos
 
-DIALOG_LINE_WIDTH = ((display.width // WINDOW_TILE_SIZE) - 10) * WINDOW_TILE_SIZE
+DIALOG_LINE_WIDTH = ((DISPLAY_WIDTH // WINDOW_TILE_SIZE) - 10) * WINDOW_TILE_SIZE
 
 class Dialog(displayio.Group):
 
@@ -220,8 +223,8 @@ class Dialog(displayio.Group):
             self.append(label)
 
         # set position
-        self.x = (display.width - self.width) // 2
-        self.y = (display.height - self.height) - 16
+        self.x = (DISPLAY_WIDTH - self.width) // 2
+        self.y = (DISPLAY_HEIGHT - self.height) - 16
 
     @property
     def width(self) -> int:

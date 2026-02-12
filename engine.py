@@ -213,7 +213,7 @@ class Fade(Entity):
         self._index = min(max(initial, 0), graphics.FADE_TILES-1)
         self._tg = displayio.TileGrid(
             bitmap=graphics.fade_bmp, pixel_shader=graphics.fade_palette,
-            width=graphics.display.width//graphics.FADE_TILE_SIZE, height=graphics.display.height//graphics.FADE_TILE_SIZE,
+            width=graphics.DISPLAY_WIDTH//graphics.FADE_TILE_SIZE, height=graphics.DISPLAY_HEIGHT//graphics.FADE_TILE_SIZE,
             tile_width=graphics.FADE_TILE_SIZE, tile_height=graphics.FADE_TILE_SIZE,
             default_tile=0 if not reverse else graphics.FADE_TILES-1,
         )
@@ -387,7 +387,7 @@ class OptionDialog(Entity):
             self._dialogs.append(dialog)
             self._group.append(dialog)
         
-        y = graphics.display.height - 8
+        y = graphics.DISPLAY_HEIGHT - 8
         for dialog in reversed(self._dialogs):
             y -= dialog.height + 8
             dialog.y = y
@@ -504,17 +504,17 @@ class Results(Entity):
 
         # background heart
         self._group.append(graphics.Heart(
-            size=graphics.display.width//4,
-            x=graphics.display.width//2,
-            y=graphics.display.height//4,
+            size=graphics.DISPLAY_WIDTH//4,
+            x=graphics.DISPLAY_WIDTH//2,
+            y=graphics.DISPLAY_HEIGHT//4,
         ))
 
         # setup graph background grid
         tg = displayio.TileGrid(
             bitmap=graphics.window_bmp, pixel_shader=graphics.window_palette,
-            width=graphics.display.width//graphics.WINDOW_TILE_SIZE,
-            height=graphics.display.height//2//graphics.WINDOW_TILE_SIZE,
-            y=graphics.display.height//2,
+            width=graphics.DISPLAY_WIDTH//graphics.WINDOW_TILE_SIZE,
+            height=graphics.DISPLAY_HEIGHT//2//graphics.WINDOW_TILE_SIZE,
+            y=graphics.DISPLAY_HEIGHT//2,
             tile_width=graphics.WINDOW_TILE_SIZE, tile_height=graphics.WINDOW_TILE_SIZE, default_tile=4,
         )
         for x in range(0, tg.width):
@@ -528,7 +528,7 @@ class Results(Entity):
                 font=FONT_TITLE, text="Thanks for Playing!",
                 color=0xffffff * i,
                 anchor_point=(.5, .5),
-                anchored_position=(graphics.display.width//2+offset, graphics.display.height//4+offset),
+                anchored_position=(graphics.DISPLAY_WIDTH//2+offset, graphics.DISPLAY_HEIGHT//4+offset),
             ))
 
         # setup level graphs
@@ -536,11 +536,11 @@ class Results(Entity):
         score_range = max_score - min_score
 
         if score_range > 0:
-            width = graphics.display.width//len(scene.LEVELS)
-            label_y = graphics.display.height - 16
-            bar_height = graphics.display.height//4
+            width = graphics.DISPLAY_WIDTH//len(scene.LEVELS)
+            label_y = graphics.DISPLAY_HEIGHT - 16
+            bar_height = graphics.DISPLAY_HEIGHT//4
             bar_width = 16
-            bar_y = graphics.display.height - 32
+            bar_y = graphics.DISPLAY_HEIGHT - 32
 
             for index, filename in enumerate(scene.LEVELS):
                 name = filename[len("00-"):-len(".json")]
@@ -572,7 +572,7 @@ class Results(Entity):
         self._group.append(Label(
             font=FONT, text=">",
             anchor_point=(1, 0),
-            anchored_position=(graphics.display.width-8, graphics.display.height//2+graphics.WINDOW_TILE_SIZE),
+            anchored_position=(graphics.DISPLAY_WIDTH-8, graphics.DISPLAY_HEIGHT//2+graphics.WINDOW_TILE_SIZE),
         ))
 
 def label_contains(label:Label, x:int, y:int) -> bool:
@@ -588,9 +588,9 @@ class Title(Entity):
 
         # background heart
         self._group.append(graphics.Heart(
-            size=max(graphics.display.width, graphics.display.height)//2,
-            x=graphics.display.width//2,
-            y=graphics.display.height//2,
+            size=max(graphics.DISPLAY_WIDTH, graphics.DISPLAY_HEIGHT)//2,
+            x=graphics.DISPLAY_WIDTH//2,
+            y=graphics.DISPLAY_HEIGHT//2,
         ))
 
         # snake silhouette
@@ -598,15 +598,15 @@ class Title(Entity):
         palette.make_transparent(1)
         self._group.append(displayio.TileGrid(
             bitmap=bitmap, pixel_shader=palette,
-            x=(graphics.display.width-bitmap.width)//2,
-            y=(graphics.display.height-bitmap.height)//2,
+            x=(graphics.DISPLAY_WIDTH-bitmap.width)//2,
+            y=(graphics.DISPLAY_HEIGHT-bitmap.height)//2,
         ))
 
         # title text
         self._group.append(Label(
             font=FONT_TITLE, text="Ssspeed Dating",
             anchor_point=(.5, .5),
-            anchored_position=(graphics.display.width//2, graphics.display.height//2),
+            anchored_position=(graphics.DISPLAY_WIDTH//2, graphics.DISPLAY_HEIGHT//2),
         ))
 
         # menu labels
@@ -615,7 +615,7 @@ class Title(Entity):
         self._start_label = Label(
             font=FONT_TITLE, text="Play", color=graphics.COLOR_PINK,
             anchor_point=(.5, .5),
-            anchored_position=(graphics.display.width//4, graphics.display.height*3//4),
+            anchored_position=(graphics.DISPLAY_WIDTH//4, graphics.DISPLAY_HEIGHT*3//4),
         )
         self._group.append(self._start_label)
         self._labels.append(self._start_label)
@@ -623,7 +623,7 @@ class Title(Entity):
         self._quit_label = Label(
             font=FONT_TITLE, text="Quit", color=graphics.COLOR_PINK,
             anchor_point=(.5, .5),
-            anchored_position=(graphics.display.width*3//4, graphics.display.height*3//4),
+            anchored_position=(graphics.DISPLAY_WIDTH*3//4, graphics.DISPLAY_HEIGHT*3//4),
         )
         self._group.append(self._quit_label)
         self._labels.append(self._quit_label)
@@ -632,7 +632,7 @@ class Title(Entity):
         self._group.append(Label(
             font=FONT, text="a game by cooper & sam", color=0x666666,
             anchor_point=(.5, 1),
-            anchored_position=(graphics.display.width//2, graphics.display.height-2),
+            anchored_position=(graphics.DISPLAY_WIDTH//2, graphics.DISPLAY_HEIGHT-2),
         ))
 
         self._index = None
@@ -713,11 +713,11 @@ class Keyboard(Entity):
         # setup graph background grid
         tg = displayio.TileGrid(
             bitmap=graphics.window_bmp, pixel_shader=graphics.window_palette,
-            width=graphics.display.width//graphics.WINDOW_TILE_SIZE,
+            width=graphics.DISPLAY_WIDTH//graphics.WINDOW_TILE_SIZE,
             height=height//graphics.WINDOW_TILE_SIZE+2,
             tile_width=graphics.WINDOW_TILE_SIZE, tile_height=graphics.WINDOW_TILE_SIZE, default_tile=4,
         )
-        tg.y = graphics.display.height - tg.height * graphics.WINDOW_TILE_SIZE
+        tg.y = graphics.DISPLAY_HEIGHT - tg.height * graphics.WINDOW_TILE_SIZE
         for x in range(0, tg.width):
             tg[x, 0] = 1 # top border
         self._group.append(tg)
@@ -728,8 +728,8 @@ class Keyboard(Entity):
             for x, char in enumerate(row):
                 self._keys.append(graphics.Button(
                     text=char, width=size, height=size,
-                    x=(graphics.display.width - row_width)//2 + x*(size + gap),
-                    y=graphics.display.height - graphics.WINDOW_TILE_SIZE - keys_height + y*(size + gap),
+                    x=(graphics.DISPLAY_WIDTH - row_width)//2 + x*(size + gap),
+                    y=graphics.DISPLAY_HEIGHT - graphics.WINDOW_TILE_SIZE - keys_height + y*(size + gap),
                 ))
         self._keys[-1].hidden = True
         self._group.append(self._keys)
@@ -738,8 +738,8 @@ class Keyboard(Entity):
             font=FONT_TITLE, text="",
             anchor_point=(.5, .5),
             anchored_position=(
-                graphics.display.width//2,
-                graphics.display.height - graphics.WINDOW_TILE_SIZE - keys_height - margin - bb_height//2
+                graphics.DISPLAY_WIDTH//2,
+                graphics.DISPLAY_HEIGHT - graphics.WINDOW_TILE_SIZE - keys_height - margin - bb_height//2
             )
         )
         self._group.append(self._text)
@@ -889,14 +889,14 @@ class Prompt(Entity):
         
         self._tg = displayio.TileGrid(
             bitmap=graphics.fade_bmp, pixel_shader=graphics.fade_palette,
-            width=graphics.display.width//graphics.FADE_TILE_SIZE, height=graphics.display.height//graphics.FADE_TILE_SIZE,
+            width=graphics.DISPLAY_WIDTH//graphics.FADE_TILE_SIZE, height=graphics.DISPLAY_HEIGHT//graphics.FADE_TILE_SIZE,
             tile_width=graphics.FADE_TILE_SIZE, tile_height=graphics.FADE_TILE_SIZE,
             default_tile=graphics.FADE_TILES//2,
         )
         self._group.append(self._tg)
 
         self._dialog = graphics.Dialog(text, force_width=True)
-        self._dialog.y = graphics.display.height - margin*2 - size - self._dialog.height
+        self._dialog.y = graphics.DISPLAY_HEIGHT - margin*2 - size - self._dialog.height
         self._group.append(self._dialog)
 
         self._buttons = []
@@ -905,7 +905,7 @@ class Prompt(Entity):
             button = graphics.Button(
                 text=option,
                 width=width, height=size,
-                y=graphics.display.height - margin - size,
+                y=graphics.DISPLAY_HEIGHT - margin - size,
                 x=self._dialog.x + (width + margin) * i,
             )
             self._buttons.append(button)
@@ -986,7 +986,7 @@ class Exit(Entity):
         bitmap, palette = adafruit_imageload.load("bitmaps/door.bmp")
         self._tg = displayio.TileGrid(
             bitmap=bitmap, pixel_shader=palette,
-            y=margin, x=graphics.display.width-margin-bitmap.width//2,
+            y=margin, x=graphics.DISPLAY_WIDTH-margin-bitmap.width//2,
             tile_width=bitmap.width//2, tile_height=bitmap.height,
         )
         self._tg.hidden = True
